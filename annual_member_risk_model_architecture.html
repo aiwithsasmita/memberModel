@@ -1,0 +1,619 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Annual Member Risk Model</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F6F7F5; --surface:#FFFFFF; --surface-2:#EEF2F0;
+  --ink:#1B2430; --ink-2:#4A5560; --muted:#75808A; --line:#D6DCD9; --line-2:#C2CAC6;
+  --accent:#0F6E8C; --accent-soft:#DCEEF4; --accent-ink:#0B4E64;
+  --tail:#B4551F; --tail-soft:#F8E6DA;
+  --ok:#2E7D5B; --ok-soft:#DFF0E7;
+  --shadow:0 1px 2px rgba(27,36,48,.06),0 6px 20px rgba(27,36,48,.05);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#11171C; --surface:#182026; --surface-2:#1F2930;
+    --ink:#E7ECEA; --ink-2:#B9C2C0; --muted:#8A959C; --line:#2C373F; --line-2:#3A4750;
+    --accent:#5AB8D6; --accent-soft:#163541; --accent-ink:#9ED9EC;
+    --tail:#E6934F; --tail-soft:#3A2618;
+    --ok:#66C297; --ok-soft:#173026;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11171C; --surface:#182026; --surface-2:#1F2930;
+  --ink:#E7ECEA; --ink-2:#B9C2C0; --muted:#8A959C; --line:#2C373F; --line-2:#3A4750;
+  --accent:#5AB8D6; --accent-soft:#163541; --accent-ink:#9ED9EC;
+  --tail:#E6934F; --tail-soft:#3A2618;
+  --ok:#66C297; --ok-soft:#173026;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:Manrope,"Segoe UI",system-ui,sans-serif;text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(22px,2.6vw,28px);font-weight:800;letter-spacing:-.015em}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.86em}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 24px 96px}
+.eyebrow{font-family:Manrope,sans-serif;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{max-width:68ch;color:var(--ink-2);font-size:19px;margin-top:14px}
+.lede b{color:var(--ink)}
+
+/* header */
+header{padding-bottom:28px;border-bottom:1px solid var(--line)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:12.5px;padding:4px 10px;border:1px solid var(--line-2);border-radius:999px;color:var(--ink-2);background:var(--surface)}
+.chip b{color:var(--ink);font-weight:500}
+
+/* overview figure */
+figure{margin:0}
+figcaption{font-size:14px;color:var(--muted);margin-top:10px;max-width:80ch}
+.overview{margin:36px 0 12px;padding:22px 20px 16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
+.overview svg{display:block;width:100%;min-width:900px;height:auto;color:var(--ink)}
+.overview svg a{cursor:pointer}
+.overview svg a:hover rect{stroke:var(--accent);stroke-width:2}
+
+/* pipeline spine */
+.stage{position:relative;padding:44px 0 8px 0;scroll-margin-top:16px}
+.stage + .stage{border-top:1px dashed var(--line)}
+.stage-head{display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start}
+.num{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-family:Manrope,sans-serif;font-weight:800;font-size:22px;color:var(--surface);background:var(--ink)}
+.stage-head p{margin-top:8px;max-width:72ch;color:var(--ink-2)}
+.io{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:14px;font-size:15px;max-width:80ch}
+.io dt{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--muted);padding-top:3px}
+.io dd{margin:0;color:var(--ink)}
+.body{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px;margin-top:22px;margin-left:82px}
+@media (max-width:860px){.body{grid-template-columns:1fr;margin-left:0}.stage-head{grid-template-columns:44px 1fr}.num{width:40px;height:40px;font-size:18px;border-radius:9px}}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-content:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px 14px}
+.card h3{display:flex;align-items:baseline;gap:8px}
+.card h3 .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em}
+.card ul{margin:8px 0 0;padding-left:18px;font-size:15px;color:var(--ink-2)}
+.card li{margin:3px 0}
+.card li b{color:var(--ink);font-weight:600}
+.card.core{border-color:var(--accent);box-shadow:var(--shadow)}
+.card.optional{border-style:dashed;background:transparent}
+.card.optional h3::after{content:"optional";font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;color:var(--muted);margin-left:auto}
+.side{display:grid;gap:12px;align-content:start}
+.example{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:8px;padding:14px 16px}
+.example .who{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-ink);letter-spacing:.06em;text-transform:uppercase}
+.example p{margin-top:6px;font-size:15.5px}
+.example .n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+.warn{background:var(--tail-soft);border-left:4px solid var(--tail);border-radius:8px;padding:14px 16px;font-size:15px}
+.warn .who{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--tail);letter-spacing:.06em;text-transform:uppercase}
+.warn p{margin-top:6px}
+.warn ol{margin:6px 0 0;padding-left:18px}
+.warn li{margin:3px 0}
+
+/* flow connector between stages */
+.flow{margin:26px 0 0 82px;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}
+.flow .line{flex:0 0 26px;height:1px;background:var(--line-2)}
+.flow .arrow{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:4px 10px}
+@media (max-width:860px){.flow{margin-left:0}}
+
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:Manrope,sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.num,th.num{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.good{color:var(--ok);font-weight:600}.bad{color:var(--tail);font-weight:600}
+
+/* distribution figure */
+.distfig{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px}
+.distfig svg{width:100%;height:auto;display:block;color:var(--ink)}
+
+/* formula */
+.formula{font-family:"IBM Plex Mono",monospace;font-size:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;overflow-x:auto;white-space:nowrap}
+
+/* summary */
+.summary{margin-top:56px;padding:26px 28px;background:var(--ink);color:var(--paper);border-radius:14px}
+.summary .eyebrow{color:var(--accent)}
+.summary p{max-width:78ch;font-size:18px;margin-top:10px}
+.summary ol{margin:14px 0 0;padding-left:22px;font-size:16px;max-width:78ch}
+.summary li{margin:5px 0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style></head><body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Architecture · read top to bottom</div>
+  <h1 style="margin-top:8px">Annual Member Risk Model</h1>
+  <p class="lede">On <b>1 January</b>, predict each member's total allowed cost for the next <b>12 months</b> from the previous <b>24 months</b> of eligibility, medical, pharmacy and RAF data — then turn that dollar figure into a <b>risk score</b> (population average = 1.0) that beats CMS-HCC on the tests actuaries already use.</p>
+  <div class="meta">
+    <span class="chip">look-back <b>24 mo</b></span>
+    <span class="chip">horizon <b>12 mo</b></span>
+    <span class="chip">grain <b>member-year</b></span>
+    <span class="chip">benchmark <b>CMS-HCC V28</b></span>
+    <span class="chip">core model <b>Tweedie GBM</b></span>
+    <span class="chip">tail model <b>HiCC classifier</b></span>
+    <span class="chip">TFT <b>phase 3 feature</b></span>
+  </div>
+</header>
+
+<figure class="overview">
+<svg viewBox="0 0 1120 250" role="img" aria-label="Seven stages of the pipeline from raw claims to a deployed risk score, with what flows between each stage" font-family="Source Sans 3, system-ui, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- stage boxes -->
+  <g font-size="13" fill="currentColor">
+    <a href="#s1"><rect x="10" y="70" width="140" height="70" rx="8" fill="none" stroke="currentColor" stroke-opacity=".45"/><text x="80" y="98" text-anchor="middle" font-weight="700">1 · Raw data</text><text x="80" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">claims · Rx · RAF</text></a>
+    <a href="#s2"><rect x="170" y="70" width="140" height="70" rx="8" fill="none" stroke="currentColor" stroke-opacity=".45"/><text x="240" y="98" text-anchor="middle" font-weight="700">2 · Features</text><text x="240" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">member-year table</text></a>
+    <a href="#s3"><rect x="330" y="70" width="140" height="70" rx="8" fill="none" stroke="currentColor" stroke-opacity=".45"/><text x="400" y="98" text-anchor="middle" font-weight="700">3 · Segment</text><text x="400" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">by months of history</text></a>
+    <a href="#s4"><rect x="490" y="70" width="140" height="70" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><text x="560" y="98" text-anchor="middle" font-weight="700">4 · Models</text><text x="560" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">cost + tail probability</text></a>
+    <a href="#s5"><rect x="650" y="70" width="140" height="70" rx="8" fill="none" stroke="currentColor" stroke-opacity=".45"/><text x="720" y="98" text-anchor="middle" font-weight="700">5 · Score</text><text x="720" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">blend · calibrate · ÷</text></a>
+    <a href="#s6"><rect x="810" y="70" width="140" height="70" rx="8" fill="none" stroke="currentColor" stroke-opacity=".45"/><text x="880" y="98" text-anchor="middle" font-weight="700">6 · Prove it</text><text x="880" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">vs CMS-HCC, held-out</text></a>
+    <a href="#s7"><rect x="970" y="70" width="140" height="70" rx="8" fill="none" stroke="currentColor" stroke-opacity=".45"/><text x="1040" y="98" text-anchor="middle" font-weight="700">7 · Deploy</text><text x="1040" y="118" text-anchor="middle" font-size="12" fill-opacity=".7">score 1-Jan · monitor</text></a>
+  </g>
+  <!-- arrows -->
+  <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+    <line x1="150" y1="105" x2="168" y2="105"/><line x1="310" y1="105" x2="328" y2="105"/><line x1="470" y1="105" x2="488" y2="105"/>
+    <line x1="630" y1="105" x2="648" y2="105"/><line x1="790" y1="105" x2="808" y2="105"/><line x1="950" y1="105" x2="968" y2="105"/>
+  </g>
+  <!-- what flows, under arrows -->
+  <g font-size="11" fill="currentColor" fill-opacity=".75" text-anchor="middle">
+    <text x="160" y="160">24 months of claims</text>
+    <text x="320" y="160">one row / member / year</text>
+    <text x="480" y="160">routed rows</text>
+    <text x="640" y="160">ŷ dollars, p(tail)</text>
+    <text x="800" y="160">score, mean 1.0</text>
+    <text x="960" y="160">champion</text>
+  </g>
+  <!-- feedback loop -->
+  <path d="M1040,140 L1040,205 L240,205 L240,142" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" fill="none" marker-end="url(#ah)"/>
+  <text x="640" y="222" font-size="11.5" fill="currentColor" fill-opacity=".75" text-anchor="middle">drift detected → rebuild features, retrain (annual full retrain, quarterly re-score)</text>
+  <!-- CMS baseline line -->
+  <path d="M80,70 L80,30 L880,30 L880,68" stroke="var(--tail)" stroke-width="1.2" stroke-dasharray="5 4" fill="none" marker-end="url(#ah)"/>
+  <text x="480" y="24" font-size="11.5" fill="var(--tail)" text-anchor="middle">CMS-HCC score from the raw feed is carried straight to stage 6 as the baseline to beat</text>
+</svg>
+<figcaption>The seven stages and what moves between them. Stage 4 is where the "zeros and spikes" problem is handled; stage 6 is where "better than CMS" is decided.</figcaption>
+</figure>
+
+<!-- ================= STAGE 1 ================= -->
+<section class="stage" id="s1">
+  <div class="stage-head">
+    <div class="num">1</div>
+    <div>
+      <div class="eyebrow">Raw data sources</div>
+      <h2>Everything the plan already knows about a member, for the last 24 months</h2>
+      <p>Nothing is modelled here. This stage only lands six feeds in one place with consistent member IDs and dates. The one subtlety is <b>run-out</b>: claims arrive late, so a "31 December" snapshot is actually pulled around March, or the missing tail is estimated.</p>
+      <dl class="io">
+        <dt>IN</dt><dd>Source systems: enrollment, medical claims, pharmacy claims, CMS risk-adjustment output, optional lab/SDOH feeds</dd>
+        <dt>OUT</dt><dd>Claims data lake (BigQuery / Snowflake), partitioned by paid month, PHI-controlled</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><h3>Eligibility / enrollment</h3><ul>
+        <li>member_id, date of birth, gender, ZIP / county</li>
+        <li>product (MA, ACA, commercial), plan, PBP</li>
+        <li>coverage start / end, months enrolled, gaps</li>
+        <li>dual / LIS, originally disabled, ESRD, institutional</li></ul></div>
+      <div class="card"><h3>Medical claims</h3><ul>
+        <li>service date, paid date, allowed and paid amounts</li>
+        <li>ICD-10-CM diagnoses (all positions), CPT / HCPCS, DRG</li>
+        <li>place of service, provider NPI and specialty</li>
+        <li>inpatient admits, length of stay, ER, observation, SNF</li></ul></div>
+      <div class="card"><h3>Pharmacy claims</h3><ul>
+        <li>NDC → GPI therapeutic class, generic flag</li>
+        <li>fill date, days supply, quantity, allowed cost</li>
+        <li>specialty / biologic / oncology / insulin flags</li>
+        <li>new starts vs refills (inputs to adherence)</li></ul></div>
+      <div class="card"><h3>CMS risk-adjustment output</h3><ul>
+        <li>CMS-HCC V28 RAF, current and prior year</li>
+        <li>the 115 payment HCCs after hierarchies</li>
+        <li>segment: community aged / disabled / dual, institutional, new enrollee</li>
+        <li>this is <b>both</b> a feature and the baseline to beat</li></ul></div>
+      <div class="card optional"><h3>Clinical / lab / HRA</h3><ul>
+        <li>HbA1c, eGFR, LDL, blood pressure</li>
+        <li>health-risk assessment answers, frailty</li>
+        <li>ADT admit/discharge feeds, care-management enrolment</li></ul></div>
+      <div class="card optional"><h3>SDOH / external</h3><ul>
+        <li>Area Deprivation Index, SVI at census tract</li>
+        <li>rurality, provider density</li>
+        <li>prior-plan risk score for transfers</li></ul></div>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Member 4471 at this stage</div>
+        <p>67, Medicare Advantage, community non-dual. In 2024–2025 the feeds hold <span class="n">41</span> medical claims (one 4-day admission in April 2025 for CHF), <span class="n">38</span> pharmacy fills (metformin, insulin, an SGLT2 started in Aug 2025), and a CMS RAF of <span class="n">1.85</span> for 2025.</p></div>
+      <div class="warn"><div class="who">Watch out</div>
+        <p>Claims run-out. A December visit may be paid in March. Either wait 3 months before snapshotting, or apply completion (IBNR) factors to the last 3 months. Doing neither makes every recent month look cheaper than it was.</p></div>
+    </div>
+  </div>
+  <div class="flow"><span class="line"></span><span class="arrow">24 months of claims, per member →</span></div>
+</section>
+
+<!-- ================= STAGE 2 ================= -->
+<section class="stage" id="s2">
+  <div class="stage-head">
+    <div class="num">2</div>
+    <div>
+      <div class="eyebrow">Feature engineering · the member-year table</div>
+      <h2>Turn 24 months of claims into one row per member, frozen on 31 December</h2>
+      <p>This is the most important stage and the one most people skip past. Every model downstream reads <b>one table</b>: a row per member per year, a few hundred feature columns describing the member <b>as of 31 Dec of year t</b>, and a target column holding what they actually cost in year <b>t+1</b>. We train on past pairs where both sides are known, and score the newest row where only the features are known.</p>
+      <dl class="io">
+        <dt>IN</dt><dd>Claims data lake</dd>
+        <dt>OUT</dt><dd>Feature store: member-year rows — training pairs (2023→2024), (2024→2025); locked test pair (2025→2026); scoring row (features as of Dec 2026)</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><h3>Pre-processing</h3><ul>
+        <li>de-duplicate claims, apply adjustments and reversals</li>
+        <li>completion factors for the last 3 months</li>
+        <li>put cost on a <b>constant-dollar</b> basis (unit-cost trend removed)</li>
+        <li>annualise partial-year members: cost ÷ months × 12</li>
+        <li>cap the <b>training</b> target at $250k; keep raw cost for evaluation</li></ul></div>
+      <div class="card"><h3>Static / demographic</h3><ul>
+        <li>age band × gender (the 24 CMS cells)</li>
+        <li>product, plan, region, dual, disabled, ESRD</li>
+        <li>months enrolled, tenure, enrolment gaps</li>
+        <li>SDOH indices, rurality</li></ul></div>
+      <div class="card"><h3>Diagnosis / HCC</h3><ul>
+        <li>V28 HCC flags after hierarchies, counts by body system</li>
+        <li>chronic-condition flags and how long they've been present</li>
+        <li>new diagnoses this year vs persistent ones</li>
+        <li>cancer / cardiac / renal / transplant / dialysis flags</li></ul></div>
+      <div class="card"><h3>Utilisation (12 and 24 mo)</h3><ul>
+        <li>inpatient admits, LOS, ICU days, 30-day readmits</li>
+        <li>ER visits, observation stays, SNF and home-health days</li>
+        <li>outpatient surgeries, imaging, specialist visits</li>
+        <li>PCP visit count (a protective signal)</li></ul></div>
+      <div class="card"><h3>Cost trajectory</h3><ul>
+        <li>allowed cost 12 mo and 24 mo, split IP / OP / Rx / professional</li>
+        <li>slope: last 6 months vs prior 6</li>
+        <li>spike count: months above 3× the member's median</li>
+        <li>months since last claim; prior-year high-cost flag</li></ul></div>
+      <div class="card"><h3>Pharmacy</h3><ul>
+        <li>therapeutic-class counts, distinct drugs</li>
+        <li>specialty, oncology, biologic, insulin, anticoagulant flags</li>
+        <li>adherence (PDC) for chronic classes, refill gaps</li>
+        <li><b>new therapy starts</b> — a leading indicator of next-year cost</li></ul></div>
+      <div class="card core"><h3>RAF-derived <span class="tag">the trick</span></h3><ul>
+        <li>CMS RAF for year t, year t−1, and the change</li>
+        <li>CMS expected cost = RAF × base rate, <b>as a feature</b></li>
+        <li>the model then only has to learn <b>where CMS is wrong</b>, so it cannot do worse than CMS</li></ul></div>
+      <div class="card"><h3>Target columns</h3><ul>
+        <li><code>y</code> = total allowed cost in year t+1</li>
+        <li><code>y_trunc</code> = min(y, $250k) for training stability</li>
+        <li><code>y_hicc</code> = 1 if y &gt; $100k (and a $250k variant)</li>
+        <li><code>exposure</code> = member-months enrolled in t+1</li></ul></div>
+      <div class="card optional"><h3>Sequence embeddings</h3><ul>
+        <li>clinical BERT over each month's diagnosis + procedure codes → PCA to 8–16 dims per month</li>
+        <li>or one whole-history vector as a static feature</li>
+        <li>check vocabulary covers ICD-10-CM / CPT / GPI first</li></ul></div>
+      <div class="card optional"><h3>TFT-derived features</h3><ul>
+        <li>monthly TFT (24 → 12) quantile forecast</li>
+        <li>sum of the P50 path = "sequence-model expected annual spend"</li>
+        <li>trajectory shape: accelerating vs decaying</li>
+        <li>never sum quantiles; sample paths if a P90 is needed</li></ul></div>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Member 4471's row (Dec 2025 snapshot)</div>
+        <p><span class="n">age_band</span> 65–69 F · <span class="n">hcc_chf</span> 1 · <span class="n">hcc_dm_w_cc</span> 1 · <span class="n">hcc_ckd3</span> 1 · <span class="n">ip_admits_12m</span> 1 · <span class="n">er_12m</span> 2 · <span class="n">cost_12m</span> $14,900 · <span class="n">cost_24m</span> $22,300 · <span class="n">slope_6m</span> +38% · <span class="n">rx_new_start_12m</span> 1 (SGLT2) · <span class="n">raf_t</span> 1.85 · <span class="n">raf_delta</span> +0.31 · <span class="n">cms_expected</span> $16,650 … about 400 more columns. Target: unknown — this is the row we score.</p></div>
+      <div class="warn"><div class="who">Leakage guard-rails</div>
+        <ol>
+          <li>Split by <b>time</b>, never randomly across members' overlapping windows.</li>
+          <li>Nothing dated after 31 Dec of year t in the features — no 2026 diagnoses in the Dec 2025 row.</li>
+          <li>Members who leave mid-year t+1: drop, or use exposure as an offset.</li>
+          <li>Zero months of history is <b>not</b> zero cost — route to the new-enrollee model instead of imputing.</li>
+          <li>HCC coding intensity rises every year; monitor it.</li>
+        </ol></div>
+    </div>
+  </div>
+  <div class="flow"><span class="line"></span><span class="arrow">one row per member-year →</span></div>
+</section>
+
+<!-- ================= STAGE 3 ================= -->
+<section class="stage" id="s3">
+  <div class="stage-head">
+    <div class="num">3</div>
+    <div>
+      <div class="eyebrow">Segmentation</div>
+      <h2>Route each row by how much history it has</h2>
+      <p>One question decides the path: how many months of history does this member have as of 31 December? You cannot compute a cost trend for someone who joined last week, and CMS itself scores these groups separately, so using the same groups makes the comparison in stage 6 fair.</p>
+      <dl class="io">
+        <dt>IN</dt><dd>Member-year rows</dd>
+        <dt>OUT</dt><dd>The same rows, tagged with a segment that selects which model scores them</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card core"><h3>Continuing members <span class="tag">≥ 12 mo · ~85–90%</span></h3><ul>
+        <li>full feature set including the 24-month trajectory</li>
+        <li>sub-segments mirror CMS: community aged / disabled / dual</li>
+        <li>carries most of the spend and nearly all catastrophic risk</li></ul></div>
+      <div class="card"><h3>Partial history <span class="tag">1–11 mo · ~5–8%</span></h3><ul>
+        <li>short-window features plus a <code>months_observed</code> flag</li>
+        <li>annualised prior cost, wide uncertainty</li>
+        <li>shrink toward the segment mean</li></ul></div>
+      <div class="card"><h3>New enrollees <span class="tag">0 mo · ~5–10%</span></h3><ul>
+        <li>demographics, dual, disabled, product, geography only</li>
+        <li>prior-plan RAF if it transfers</li>
+        <li>re-score at day 90 once first Rx and diagnoses arrive</li></ul></div>
+      <div class="card"><h3>Special populations</h3><ul>
+        <li>ESRD: dialysis, transplant, functioning graft</li>
+        <li>institutional / long-term care, hospice</li>
+        <li>separate calibration or fixed CMS factors</li></ul></div>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Member 4471</div>
+        <p>24 months of history, community, non-dual, not ESRD → <b>continuing member</b>. Her row goes to models A and B in the next stage.</p></div>
+      <div class="warn"><div class="who">Why not one model with a segment flag?</div>
+        <p>It can work. But separate models are easier to explain to actuaries and regulators, and the distribution shape and available features differ enough that separate calibration is usually needed anyway.</p></div>
+    </div>
+  </div>
+  <div class="flow"><span class="line"></span><span class="arrow">routed rows →</span></div>
+</section>
+
+<!-- ================= STAGE 4 ================= -->
+<section class="stage" id="s4">
+  <div class="stage-head">
+    <div class="num">4</div>
+    <div>
+      <div class="eyebrow">Model layer</div>
+      <h2>Two questions per member: how much, and how likely is a catastrophe?</h2>
+      <p>Annual health cost is three populations glued together: a spike at exactly <b>$0</b>, a skewed body of ordinary spenders, and a heavy tail of cancer, cardiac, dialysis and NICU cases. No single loss function handles all three well, so the architecture aims one model at each part and combines them in stage 5.</p>
+      <dl class="io">
+        <dt>IN</dt><dd>Routed member-year rows</dd>
+        <dt>OUT</dt><dd>Per member: expected cost <code>ŷ</code>, tail probability <code>p_hicc</code>, tail expected cost <code>E[y | HiCC]</code></dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card core" style="grid-column:1/-1">
+        <h3>A · Expected-cost model <span class="tag">core · LightGBM, Tweedie loss</span></h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 24px">
+        <ul>
+          <li>gradient-boosted trees, <code>objective = tweedie</code>, power 1.3–1.7</li>
+          <li>log link with <code>log(member-months)</code> as exposure offset</li>
+          <li>Tweedie = compound Poisson-Gamma: a mass at zero plus a skewed positive part, in one model</li>
+          <li>monotone constraints: RAF ↑, prior cost ↑, age ↑ can only push cost up</li></ul>
+        <ul>
+          <li>CMS expected cost in as a feature ⇒ learns the residual over CMS</li>
+          <li>hyper-parameters via Optuna; 5-fold CV grouped by member; early stopping</li>
+          <li>alternative: two-part hurdle, P(y &gt; 0) × E[y | y &gt; 0]</li>
+          <li>SHAP values stored per member for explanations</li></ul>
+        </div>
+      </div>
+      <div class="card core"><h3>B · High-cost claimant classifier</h3><ul>
+        <li>targets: P(y &gt; $100k) and P(y &gt; $250k) — roughly the top 1% and 0.2%</li>
+        <li>gradient boosting with class weights or minority oversampling</li>
+        <li>strongest signals: prior-year cost, oncology / dialysis / transplant codes, specialty Rx starts, admits, RAF change</li>
+        <li>published results on large commercial data: AUC ≈ 0.87–0.91 at $250k</li>
+        <li>used for tail correction in stage 5 and for care-management lists</li></ul></div>
+      <div class="card"><h3>C · New-enrollee / partial model</h3><ul>
+        <li>Tweedie GBM or GLM on demographics, SDOH, product</li>
+        <li>add first-90-day Rx and diagnoses when available, then re-score</li>
+        <li>benchmark: the CMS new-enrollee demographic model</li></ul></div>
+      <div class="card optional"><h3>D · Zero-spend propensity</h3><ul>
+        <li>P(y = 0): young, no Rx, no PCP visit</li>
+        <li>fixes CMS's 62% over-prediction of the healthiest quintile</li>
+        <li>feeds the hurdle variant and the low-risk tier</li></ul></div>
+      <div class="card optional"><h3>E · Temporal Fusion Transformer</h3><ul>
+        <li>member-month panel: 24-month encoder → 12-month decoder</li>
+        <li>static: age band, gender, plan, segment · known future: month, plan-year position · observed past: cost, admits, ER, chronic count, Rx, new dx</li>
+        <li>quantile loss; outputs monthly P10/P50/P90, variable importance, attention over time</li>
+        <li><b>role:</b> Σ P50 becomes a feature for A, or an ensemble member — not the primary annual scorer</li></ul></div>
+      <figure class="distfig" style="grid-column:1/-1">
+        <svg viewBox="0 0 900 220" role="img" aria-label="Shape of annual member cost: a tall bar at zero, a skewed body, and a long heavy tail; models A, D and B are aimed at each region">
+          <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+          <!-- axes -->
+          <line x1="60" y1="170" x2="880" y2="170" stroke="currentColor" stroke-opacity=".5"/>
+          <line x1="60" y1="170" x2="60" y2="30" stroke="currentColor" stroke-opacity=".5"/>
+          <!-- zero mass -->
+          <rect x="62" y="40" width="26" height="130" fill="var(--accent)" fill-opacity=".85"/>
+          <!-- body curve -->
+          <path d="M100,168 C130,60 180,40 230,70 C290,105 360,145 470,160 C600,167 760,169 880,170" fill="var(--accent)" fill-opacity=".18" stroke="var(--accent)" stroke-width="2"/>
+          <!-- tail emphasis -->
+          <path d="M520,161 C640,166 760,168 880,170" fill="none" stroke="var(--tail)" stroke-width="3"/>
+          <!-- labels -->
+          <g font-size="12" fill="currentColor">
+            <text x="75" y="186" text-anchor="middle">$0</text>
+            <text x="230" y="186" text-anchor="middle">$2k</text>
+            <text x="470" y="186" text-anchor="middle">$20k</text>
+            <text x="700" y="186" text-anchor="middle">$100k</text>
+            <text x="870" y="186" text-anchor="middle">$250k+</text>
+            <text x="470" y="208" text-anchor="middle" fill-opacity=".7">annual allowed cost (log scale)</text>
+          </g>
+          <g font-size="12.5" font-weight="700" fill="currentColor">
+            <text x="120" y="52">non-spenders · point mass at zero</text>
+            <text x="120" y="68" font-weight="400" font-size="11.5" fill-opacity=".8">model D (optional) · Tweedie handles it too</text>
+            <text x="330" y="100">ordinary spenders · skewed body</text>
+            <text x="330" y="116" font-weight="400" font-size="11.5" fill-opacity=".8">model A · Tweedie GBM</text>
+            <text x="640" y="132" fill="var(--tail)">catastrophic tail · cancer, cardiac, dialysis</text>
+            <text x="640" y="148" font-weight="400" font-size="11.5" fill="var(--tail)">model B · P(HiCC) and E[cost | HiCC]</text>
+          </g>
+        </svg>
+        <figcaption>The target's shape, and which model owns which region. Train on cost capped at $250k for stability; evaluate on uncapped cost so aggregate dollars reconcile.</figcaption>
+      </figure>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Member 4471 through the models</div>
+        <p><b>Model A</b> reads her CHF + CKD + diabetes flags, the April admission, the rising 6-month slope and the new SGLT2 start, and returns expected 2026 cost <span class="n">$18,400</span>.</p>
+        <p><b>Model B</b> returns <span class="n">p_hicc = 0.06</span>: a 6% chance she crosses $100k (CHF readmission or dialysis start), with <span class="n">E[cost | HiCC] ≈ $140,000</span>.</p>
+        <p>SHAP top drivers: prior-year cost, CHF admission, RAF change, SGLT2 start, age band.</p></div>
+      <div class="warn"><div class="who">Why not just the TFT?</div>
+        <p>Monthly member cost is mostly zeros with rare spikes, so a monthly forecaster spends its capacity on timing noise. The business asks for one annual number, and the sum over 12 months is far smoother than any single month. Use TFT for what it adds — trajectory shape and monthly cash-flow views — after the annual backbone exists.</p></div>
+    </div>
+  </div>
+  <div class="flow"><span class="line"></span><span class="arrow">ŷ dollars, p_hicc, E[y | HiCC] →</span></div>
+</section>
+
+<!-- ================= STAGE 5 ================= -->
+<section class="stage" id="s5">
+  <div class="stage-head">
+    <div class="num">5</div>
+    <div>
+      <div class="eyebrow">Ensemble → calibration → risk score</div>
+      <h2>Combine, correct the totals, then divide by the population mean</h2>
+      <p>Three short steps turn model outputs into the number the business asked for. The score sits on the same scale as CMS (average member = 1.0), so the two are directly comparable, and every score decomposes into its drivers.</p>
+      <dl class="io">
+        <dt>IN</dt><dd><code>ŷ</code>, <code>p_hicc</code>, <code>E[y | HiCC]</code> per member, plus validation-year actuals for calibration</dd>
+        <dt>OUT</dt><dd>risk score, expected dollars, tail probability, tier, top-5 drivers — per member and rolled up by plan, PCP, county, condition</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card" style="grid-column:1/-1"><h3>Blend and tail correction</h3>
+        <p class="formula" style="margin-top:8px">ŷ_blend = w₁·GBM_tweedie + w₂·hurdle + w₃·Σ TFT_P50     (weights fit on the validation year, out-of-fold)</p>
+        <p class="formula" style="margin-top:8px">ŷ* = (1 − p_hicc) · ŷ_blend  +  p_hicc · E[y | HiCC]</p>
+        <ul><li>segment-specific weights (continuing / partial / new)</li><li>a ridge meta-learner stacks the components; never fit on rows the base models saw</li></ul></div>
+      <div class="card"><h3>Calibration</h3><ul>
+        <li>isotonic or Platt scaling on the validation year, per segment</li>
+        <li>enforce Σ predicted = Σ actual within each risk decile — this is what makes predictive ratios land at 1.0</li>
+        <li>recalibrate annually: normalisation factor = mean(ŷ*) over the reference population</li>
+        <li>coding-intensity adjustment if the score is used for payment</li></ul></div>
+      <div class="card core"><h3>Risk score</h3>
+        <p class="formula" style="margin-top:8px">risk_score = ŷ* / mean(ŷ*_reference_population)   → average member = 1.0</p>
+        <ul><li>tiers: low &lt; 0.5 · moderate · high &gt; 2.0 · catastrophic when p_hicc &gt; τ</li><li>confidence band from a quantile GBM or the TFT P10–P90</li><li>SHAP splits each score into demographics + diagnoses + utilisation + Rx + trend</li></ul></div>
+      <div class="card"><h3>Who consumes it</h3><ul>
+        <li><b>actuarial:</b> reserves, bid support, PMPM by cohort</li>
+        <li><b>care management:</b> outreach lists ranked by p_hicc × impactability</li>
+        <li><b>underwriting / network:</b> risk-adjusted benchmarks by PCP and county</li>
+        <li>scored 1 January, refreshed quarterly as run-out completes</li></ul></div>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Member 4471's score</div>
+        <p>ŷ* = 0.94 × $18,400 + 0.06 × $140,000 = <span class="n">$25,700</span>. Population mean predicted cost is <span class="n">$12,000</span>, so risk score = <span class="n">2.14</span> → tier <b>high</b>. CMS gave her <span class="n">1.85</span>; the model is saying CMS under-rates her because it cannot see the rising trajectory or the new drug start.</p></div>
+      <div class="warn"><div class="who">What "better than CMS" means</div>
+        <p>CMS-HCC explains about 12% of individual cost variation (R² ≈ 0.12; ≈ 0.18 if prior-year cost is added). It over-predicts the healthiest 20% by 62% and under-predicts the top 1% by 29%. The win condition is R² in the high teens, every decile within ±5%, and clearly more of the top-1% spend captured — on the same segments, so the comparison is accepted.</p></div>
+    </div>
+  </div>
+  <div class="flow"><span class="line"></span><span class="arrow">score (mean 1.0), dollars, drivers →</span></div>
+</section>
+
+<!-- ================= STAGE 6 ================= -->
+<section class="stage" id="s6">
+  <div class="stage-head">
+    <div class="num">6</div>
+    <div>
+      <div class="eyebrow">Evaluation · champion vs challenger</div>
+      <h2>Prove it on a year the model never saw, with the tests actuaries already use</h2>
+      <p>Both scores — CMS-HCC and yours — are run on the same members for a held-out year, and compared on the metrics risk-adjustment reviewers expect. A decision rule agreed <b>before</b> looking at the results keeps the promotion honest.</p>
+      <dl class="io">
+        <dt>IN</dt><dd>Scores from stage 5 for the locked test pair (features Dec 2025 → actual 2026 cost) and the CMS-HCC score for the same rows</dd>
+        <dt>OUT</dt><dd>Validation report, model card, promote / reject decision</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><h3>Temporal validation design</h3><ul>
+        <li><b>train:</b> 2022→2023 and 2023→2024</li>
+        <li><b>validate:</b> 2024→2025 (blend weights, calibration, early stopping)</li>
+        <li><b>test, locked:</b> 2025→2026, scored once</li>
+        <li>baselines: CMS-HCC V28, prior-year cost, GLM</li></ul></div>
+      <div class="card"><h3>Accuracy</h3><ul>
+        <li>R² on raw and on capped cost — report both</li>
+        <li>MAE on individuals (will look poor for every model; expected)</li>
+        <li>aggregate error by plan, county, PCP panel — the number finance cares about</li></ul></div>
+      <div class="card core"><h3>Predictive ratios</h3><ul>
+        <li>PR = Σ predicted ÷ Σ actual; target 1.0 ± 5%</li>
+        <li>by decile of predicted risk</li>
+        <li>by condition: diabetes, CHF, COPD, CKD, cancer, behavioural health, no-HCC</li>
+        <li>by segment: dual, disabled, new enrollee, age band</li></ul></div>
+      <div class="card"><h3>Tail and classification</h3><ul>
+        <li>cumulative gain: share of spend captured in the top 1 / 5 / 10%</li>
+        <li>AUC and PR-AUC for the $100k and $250k targets</li>
+        <li>precision@k for the care-management list size</li></ul></div>
+      <div class="card"><h3>Fairness and stability</h3><ul>
+        <li>predictive-ratio parity across gender, age, dual, rural, ADI quintile</li>
+        <li>year-over-year score drift and rank correlation</li>
+        <li>SHAP importances reviewed for clinical face validity</li></ul></div>
+      <div class="tablewrap" style="grid-column:1/-1">
+        <table>
+          <thead><tr><th>Predictive ratio by decile</th><th class="num">CMS-HCC (MedPAC)</th><th class="num">Target for challenger</th><th>Reading</th></tr></thead>
+          <tbody>
+            <tr><td>Bottom 20% of predicted cost</td><td class="num bad">1.62</td><td class="num good">0.95 – 1.05</td><td>CMS pays 62% too much for the healthiest members</td></tr>
+            <tr><td>20th – 40th percentile</td><td class="num bad">1.30</td><td class="num good">0.95 – 1.05</td><td>still over-predicted</td></tr>
+            <tr><td>40th – 80th percentile</td><td class="num">0.95 – 1.10</td><td class="num good">0.95 – 1.05</td><td>roughly right</td></tr>
+            <tr><td>95th – 99th percentile</td><td class="num bad">0.82</td><td class="num good">≥ 0.95</td><td>18% under-predicted</td></tr>
+            <tr><td>Top 1%</td><td class="num bad">0.71</td><td class="num good">≥ 0.90</td><td>29% under-predicted — the gap models B and the trajectory features exist to close</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Decision rule (agreed in advance)</div>
+        <p>Promote the challenger only if, on the locked test year: R² beats CMS by ≥ 0.04, every decile's predictive ratio is within ±5%, top-1% PR ≥ 0.90, and no fairness slice gets worse. Otherwise ship the simplest model that clears the bar.</p></div>
+      <div class="warn"><div class="who">A common mistake</div>
+        <p>Comparing on a random 20% hold-out. Rows from the same member in different years leak into each other, and the metrics come out flattering. Only a whole held-out year counts.</p></div>
+    </div>
+  </div>
+  <div class="flow"><span class="line"></span><span class="arrow">promoted champion →</span></div>
+</section>
+
+<!-- ================= STAGE 7 ================= -->
+<section class="stage" id="s7">
+  <div class="stage-head">
+    <div class="num">7</div>
+    <div>
+      <div class="eyebrow">Deployment, monitoring, governance</div>
+      <h2>Run it every January, watch it every month</h2>
+      <p>Once promoted, the whole chain is a scheduled pipeline. The one thing that quietly breaks a risk model in production is <b>drift</b>: coding intensity creeps up, the Rx mix shifts, unit costs change. Monitoring closes the loop back to stage 2.</p>
+      <dl class="io">
+        <dt>IN</dt><dd>Registered champion model, feature definitions, new claims each month</dd>
+        <dt>OUT</dt><dd>Member scores on 1 January, quarterly refreshes, drift alerts, audit trail</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><h3>Pipelines</h3><ul>
+        <li>Vertex AI Pipelines: ingest → features → train → evaluate → register</li>
+        <li>dbt on BigQuery for feature SQL; Feast for point-in-time joins</li>
+        <li>annual full retrain in January; quarterly re-score with fresh run-out</li>
+        <li>model registry records version, data snapshot hash, metrics</li></ul></div>
+      <div class="card"><h3>Scoring and delivery</h3><ul>
+        <li>batch scoring on 1 January (Cloud Run / Dataflow) for the full membership</li>
+        <li>results to a BigQuery mart → Looker dashboards, actuarial extracts</li>
+        <li>optional online endpoint to re-score new enrollees at day 90</li>
+        <li>SHAP explanations stored per member for audit and care teams</li></ul></div>
+      <div class="card"><h3>Monitoring</h3><ul>
+        <li>feature drift (PSI) on HCC prevalence, Rx mix, cost trend</li>
+        <li>score drift: mean score must stay ≈ 1.0 after normalisation</li>
+        <li>monthly actual-vs-expected as the year emerges (rolling PR)</li>
+        <li>alert when top-decile PR or HiCC precision degrades</li></ul></div>
+      <div class="card"><h3>Governance</h3><ul>
+        <li>model-risk-management validation report and model card</li>
+        <li>HIPAA / PHI minimisation, access logging</li>
+        <li>if used for payment: RADV-style diagnosis substantiation</li>
+        <li>bias review, actuarial sign-off, change control</li></ul></div>
+    </div>
+    <div class="side">
+      <div class="example"><div class="who">Build order</div>
+        <p>① member-year table + CMS baseline metrics, so you know the number to beat. ② Tweedie GBM (model A) — likely already beats CMS. ③ HiCC classifier (B), new-enrollee model (C), calibration. ④ only if tail predictive ratios still lag: TFT and embedding features (E).</p></div>
+      <div class="warn"><div class="who">Feedback loop</div>
+        <p>A drift alert does not mean "retrain the same model on new data". It means go back to stage 2, check whether a feature's meaning changed (a new coding rule, a formulary change), fix the definition, then retrain.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="summary">
+  <div class="eyebrow">The whole thing in one paragraph</div>
+  <p>Raw claims become one feature row per member per year, frozen at 31 December. Rows are routed by how much history they carry. A Tweedie gradient-boosted model predicts each member's expected annual cost while a classifier predicts the probability of a catastrophic year; the two are blended, calibrated so totals reconcile by decile, and divided by the population mean to give a risk score with average 1.0. That score is proven against CMS-HCC on a locked-out year using R², predictive ratios and tail lift, and only then scheduled to run every January with drift monitoring feeding back into the feature definitions.</p>
+  <ol>
+    <li>Stage 2 (the member-year table) is where most of the effort and most of the risk lives.</li>
+    <li>Stage 4 is the answer to "zeros and spikes": Tweedie for the body, a classifier for the tail.</li>
+    <li>Stage 6 is where "better than CMS" is decided — by predictive ratios, not by MAE.</li>
+    <li>TFT and embeddings are stage-2 features you add after the backbone works, not the backbone.</li>
+  </ol>
+</div>
+</div>
+</body></html>
