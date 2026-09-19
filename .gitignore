@@ -1,0 +1,9 @@
+# Python environment -- recreate with: pip install -r requirements.txt
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local MLflow store: holds machine-specific absolute paths and is rebuilt by every
+# `python pipeline.py` run.
+mlruns/
