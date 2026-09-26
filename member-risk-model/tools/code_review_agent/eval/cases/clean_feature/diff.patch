@@ -1,0 +1,18 @@
+diff --git a/stages/02_feature_engineering/src/plugins/utilization.py b/stages/02_feature_engineering/src/plugins/utilization.py
+index bbbbbbb..ccccccc 100644
+--- a/stages/02_feature_engineering/src/plugins/utilization.py
++++ b/stages/02_feature_engineering/src/plugins/utilization.py
+@@ -20,5 +20,8 @@ def build_utilization(claims, snapshot, cfg):
+     window = joined.filter(F.col("paid_date") <= F.col("feature_asof_date"))
++    er = window.filter(F.col("setting") == "ER")
++    er_6m = er.filter(F.col("service_date") >= F.add_months(F.col("cutoff_date"), -cfg.lookback_short_months))
+     return (window.groupBy("member_id", "target_year", "cutoff_month")
+                   .agg(F.countDistinct("claim_id").alias("n_claims")))
+diff --git a/stages/02_feature_engineering/tests/test_utilization.py b/stages/02_feature_engineering/tests/test_utilization.py
+index ddddddd..eeeeeee 100644
+--- a/stages/02_feature_engineering/tests/test_utilization.py
++++ b/stages/02_feature_engineering/tests/test_utilization.py
+@@ -1,2 +1,3 @@
+ def test_placeholder():
++    assert True
+     pass

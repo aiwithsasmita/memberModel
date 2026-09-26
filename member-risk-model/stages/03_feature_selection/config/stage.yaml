@@ -1,0 +1,9 @@
+# Stage config: every tunable value for Feature selection lives here or in config/selection.yaml.
+stage:
+  id: 03_feature_selection
+  title: Feature selection
+  spec: specs/003-feature-selection
+  owners: "@org/feature-engineering-owners"
+  gate: Feature Gate
+params:
+  sample_frac_for_selection: 0.2

@@ -1,0 +1,26 @@
+# Data contract for 05_model_test. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 05_model_test
+inputs:
+  pred_candidates:
+    table: "${catalog}.mrs.pred_candidates"
+    keys: []          # declared by the producing stage
+  target:
+    table: "${catalog}.mrs.target"
+    keys: []          # declared by the producing stage
+outputs:
+  eval_metrics:
+    table: "${catalog}.mrs.eval_metrics"
+    keys: [split, target_year, cutoff_month, pop, run, model_name, metric]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  eval_pr:
+    table: "${catalog}.mrs.eval_pr"
+    keys: [split, target_year, cutoff_month, pop, run, model_name, group_type, group_value]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  comparison_verdicts:
+    table: "${catalog}.mrs.comparison_verdicts"
+    keys: [challenger_version, champion_version]
+    required_columns: []   # fill from the stage spec
+    versioned: true

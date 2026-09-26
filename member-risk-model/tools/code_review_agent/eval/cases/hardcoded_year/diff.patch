@@ -1,0 +1,8 @@
+diff --git a/stages/04_model_training/src/plugins/data.py b/stages/04_model_training/src/plugins/data.py
+index 6666666..7777777 100644
+--- a/stages/04_model_training/src/plugins/data.py
++++ b/stages/04_model_training/src/plugins/data.py
+@@ -5,4 +5,5 @@ def training_rows(df, cfg):
+-    return df.filter(F.col("target_year").isin(cfg.train_years))
++    train_year = 2023
++    return df.filter(F.col("target_year") == train_year)

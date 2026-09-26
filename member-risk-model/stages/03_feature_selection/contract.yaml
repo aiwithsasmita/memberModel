@@ -1,0 +1,24 @@
+# Data contract for 03_feature_selection. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 03_feature_selection
+inputs:
+  snapshot:
+    table: "${catalog}.mrs.snapshot"
+    keys: []          # declared by the producing stage
+  target:
+    table: "${catalog}.mrs.target"
+    keys: []          # declared by the producing stage
+  feature_store:
+    table: "${catalog}.mrs.feature_store"
+    keys: []          # declared by the producing stage
+outputs:
+  model_dataset:
+    table: "${catalog}.mrs.model_dataset"
+    keys: [member_id, target_year, cutoff_month]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  selected_features:
+    table: "${catalog}.mrs.selected_features"
+    keys: [feature_name, selection_run_id]
+    required_columns: []   # fill from the stage spec
+    versioned: true

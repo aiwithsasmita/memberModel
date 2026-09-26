@@ -1,0 +1,14 @@
+# Standalone job for 08_aiops (runs this stage alone; the full pipeline is pipelines/pipeline_job.yml)
+resources:
+  jobs:
+    mrs_08_aiops:
+      name: mrs-08_aiops-${bundle.target}
+      run_as: {service_principal_name: "${var.pipeline_sp}"}
+      schedule: {quartz_cron_expression: "0 0 8 * * ?", timezone_id: "Asia/Kolkata"}   # daily monitors
+      tasks:
+        - task_key: run
+          spark_python_task: {python_file: ./src/run.py}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec: {client: "2", dependencies: ["../../common"]}

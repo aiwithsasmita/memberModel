@@ -1,0 +1,13 @@
+diff --git a/src/training/run.py b/src/training/run.py
+new file mode 100644
+index 0000000..aaaaaaa
+--- /dev/null
++++ b/src/training/run.py
+@@ -0,0 +1,7 @@
++import mlflow
++
++
++def run(model, params):
++    with mlflow.start_run():
++        mlflow.log_params(params)
++        mlflow.sklearn.log_model(model, "model")

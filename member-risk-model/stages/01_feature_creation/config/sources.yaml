@@ -1,0 +1,38 @@
+# Source registry for 01_feature_creation. Add a source = add an entry + one connector in src/plugins/.
+# Table names are resolved per bundle target (dev/test/prod) through ${source_catalog}.
+version: 1
+sources:
+  claims_medical:
+    enabled: true
+    table: "${source_catalog}.claims.medical_claims"
+    keys: [claim_id, claim_line]
+    dates: {service: service_date, paid: paid_date}
+    amount: allowed_amt
+    owner: "@org/feature-creation-owners"
+    spec: "FR-001"          # spec requirement this source serves
+  claims_rx:
+    enabled: true
+    table: "${source_catalog}.claims.pharmacy_claims"
+    keys: [claim_id]
+    dates: {service: fill_date, paid: paid_date}
+    amount: allowed_amt
+    owner: "@org/feature-creation-owners"
+    spec: "FR-001"
+  eligibility:
+    enabled: true
+    table: "${source_catalog}.members.eligibility"
+    keys: [member_id, year_month]
+    owner: "@org/feature-creation-owners"
+    spec: "FR-002"
+  mmr:
+    enabled: true
+    table: "${source_catalog}.cms.mmr"
+    keys: [member_id, payment_month]
+    owner: "@org/feature-creation-owners"
+    spec: "FR-003"
+  mor:
+    enabled: true
+    table: "${source_catalog}.cms.mor"
+    keys: [member_id, payment_year]
+    owner: "@org/feature-creation-owners"
+    spec: "FR-003"

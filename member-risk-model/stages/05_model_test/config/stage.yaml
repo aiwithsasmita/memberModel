@@ -1,0 +1,9 @@
+# Stage config: every tunable value for Model test lives here or in config/evaluation.yaml.
+stage:
+  id: 05_model_test
+  title: Model test
+  spec: specs/005-model-test
+  owners: "@org/model-owner"
+  gate: Model Gate
+params:
+  mlflow_experiment: /Shared/mrs/evaluation

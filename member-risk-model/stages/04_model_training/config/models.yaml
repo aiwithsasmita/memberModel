@@ -1,0 +1,46 @@
+# Model registry for 04_model_training. Add an algorithm = new plugin class in src/plugins/ + one entry here.
+version: 1
+data:
+  train_target_years: [2023]
+  validation_target_years: [2024]
+  cutoff_months: [0, 2, 5, 8]
+  label: y_capped
+  weight: weight
+  seed: 42
+models:
+  b2_hcc_refit:
+    enabled: true
+    plugin: hcc_refit_linear
+    role: baseline
+    owner: "@org/ml-owners"
+    spec: ["FR-020"]
+  b3_prior_cost:
+    enabled: true
+    plugin: prior_cost
+    role: baseline
+    owner: "@org/ml-owners"
+    spec: ["FR-021"]
+  lgbm_tweedie:
+    enabled: true
+    plugin: lightgbm_tweedie
+    role: candidate
+    owner: "@org/ml-owners"
+    spec: ["FR-022"]
+    search:
+      trials: 50
+      space:
+        tweedie_variance_power: [1.1, 1.8]
+        num_leaves: [31, 255]
+        learning_rate: [0.01, 0.1]
+        min_data_in_leaf: [100, 5000]
+        feature_fraction: [0.5, 1.0]
+        lambda_l2: [0.0, 10.0]
+  highcost_classifier:
+    enabled: false          # V1.1
+    plugin: lightgbm_binary
+    role: auxiliary
+    owner: "@org/ml-owners"
+    spec: ["FR-023"]
+calibration:
+  method: isotonic          # fallback: scale
+  per: cutoff_month

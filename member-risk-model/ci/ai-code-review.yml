@@ -1,0 +1,35 @@
+# Move to .github/workflows/ai-code-review.yml. AI-DLC code review agent on every PR.
+# Secrets: DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET (sp-aidlc-agents);
+# optional DATABRICKS_TOKEN + DATABRICKS_WAREHOUSE_HTTP_PATH to log to aidlc_reviews.
+name: ai-code-review
+on:
+  pull_request: {types: [opened, synchronize, reopened, ready_for_review]}
+permissions: {contents: read, pull-requests: write}
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install "./tools/code_review_agent[ci]"
+      - name: Review
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_WAREHOUSE_HTTP_PATH: ${{ secrets.DATABRICKS_WAREHOUSE_HTTP_PATH }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          aidlc-review --config tools/code_review_agent/config/review_config.yaml \
+            --rules tools/code_review_agent/config/rules.yaml --repo-root . \
+            --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }} \
+            --pr ${{ github.event.pull_request.number }} --github-repo ${{ github.repository }} \
+            --commit-sha ${{ github.event.pull_request.head.sha }} --json review.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: ai-code-review, path: review.json}

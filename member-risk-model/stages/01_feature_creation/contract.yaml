@@ -1,0 +1,35 @@
+# Data contract for 01_feature_creation. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 01_feature_creation
+inputs:
+  raw_claims_medical:
+    table: "${source_catalog}.raw.claims_medical"   # see config/sources.yaml
+    keys: []
+  raw_claims_rx:
+    table: "${source_catalog}.raw.claims_rx"   # see config/sources.yaml
+    keys: []
+  raw_eligibility:
+    table: "${source_catalog}.raw.eligibility"   # see config/sources.yaml
+    keys: []
+  raw_mmr:
+    table: "${source_catalog}.raw.mmr"   # see config/sources.yaml
+    keys: []
+  raw_mor:
+    table: "${source_catalog}.raw.mor"   # see config/sources.yaml
+    keys: []
+outputs:
+  member_month_spine:
+    table: "${catalog}.mrs.member_month_spine"
+    keys: [member_id, year_month]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  claims_std:
+    table: "${catalog}.mrs.claims_std"
+    keys: [claim_id]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  member_dx_events:
+    table: "${catalog}.mrs.member_dx_events"
+    keys: [member_id, service_date, icd10]
+    required_columns: []   # fill from the stage spec
+    versioned: true

@@ -1,0 +1,9 @@
+diff --git a/stages/04_model_training/src/plugins/train.py b/stages/04_model_training/src/plugins/train.py
+index 4444444..5555555 100644
+--- a/stages/04_model_training/src/plugins/train.py
++++ b/stages/04_model_training/src/plugins/train.py
+@@ -40,4 +40,6 @@ def train(model_df, cfg):
+     preds = model.predict(model_df)
++    top = preds.orderBy(F.desc("pred")).limit(20)
++    print("top risk members:", [r.member_id for r in top.select("member_id").collect()])
+     return model

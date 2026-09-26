@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aidlc-review"
+version = "1.0.0"
+description = "AI-DLC code review agent for Databricks, using a GPT endpoint through AI Gateway"
+requires-python = ">=3.10"
+dependencies = [
+  "pyyaml>=6.0",
+  "openai>=1.40",
+  "databricks-sdk>=0.30",
+]
+
+[project.optional-dependencies]
+ci = ["requests>=2.31", "databricks-sql-connector>=3.0", "mlflow>=3.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+aidlc-review = "aidlc_review.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

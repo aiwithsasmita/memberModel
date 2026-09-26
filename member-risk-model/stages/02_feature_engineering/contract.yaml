@@ -1,0 +1,29 @@
+# Data contract for 02_feature_engineering. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 02_feature_engineering
+inputs:
+  member_month_spine:
+    table: "${catalog}.mrs.member_month_spine"
+    keys: []          # declared by the producing stage
+  claims_std:
+    table: "${catalog}.mrs.claims_std"
+    keys: []          # declared by the producing stage
+  member_dx_events:
+    table: "${catalog}.mrs.member_dx_events"
+    keys: []          # declared by the producing stage
+outputs:
+  snapshot:
+    table: "${catalog}.mrs.snapshot"
+    keys: [member_id, target_year, cutoff_month]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  target:
+    table: "${catalog}.mrs.target"
+    keys: [member_id, target_year, cutoff_month]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  feature_store:
+    table: "${catalog}.mrs.feature_store"
+    keys: [member_id, target_year, cutoff_month]
+    required_columns: []   # fill from the stage spec
+    versioned: true

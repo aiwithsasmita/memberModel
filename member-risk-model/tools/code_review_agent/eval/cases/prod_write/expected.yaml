@@ -1,0 +1,2 @@
+expected_rules: [PROD-WRITE]
+should_block: true

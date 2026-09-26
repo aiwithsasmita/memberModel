@@ -1,0 +1,13 @@
+# Standalone job for 04_model_training (runs this stage alone; the full pipeline is pipelines/pipeline_job.yml)
+resources:
+  jobs:
+    mrs_04_model_training:
+      name: mrs-04_model_training-${bundle.target}
+      run_as: {service_principal_name: "${var.pipeline_sp}"}
+      tasks:
+        - task_key: run
+          spark_python_task: {python_file: ./src/run.py}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec: {client: "2", dependencies: ["../../common"]}

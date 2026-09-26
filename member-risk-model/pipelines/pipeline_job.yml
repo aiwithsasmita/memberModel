@@ -1,0 +1,41 @@
+# Bundle resource: the main pipeline job. One task per stage, each depending on the previous one.
+resources:
+  jobs:
+    mrs_pipeline:
+      name: mrs-pipeline-${bundle.target}
+      run_as: {service_principal_name: "${var.pipeline_sp}"}
+      parameters:
+        - {name: spec_id, default: ""}
+        - {name: change_request_id, default: ""}
+      tasks:
+        - task_key: gate_check
+          spark_python_task: {python_file: ./gate_check.py, parameters: ["--spec-id", "{{job.parameters.spec_id}}"]}
+          environment_key: default
+        - task_key: s01_feature_creation
+          depends_on: [{task_key: gate_check}]
+          spark_python_task: {python_file: ../stages/01_feature_creation/src/run.py}
+          environment_key: default
+        - task_key: s02_feature_engineering
+          depends_on: [{task_key: s01_feature_creation}]
+          spark_python_task: {python_file: ../stages/02_feature_engineering/src/run.py}
+          environment_key: default
+        - task_key: s03_feature_selection
+          depends_on: [{task_key: s02_feature_engineering}]
+          spark_python_task: {python_file: ../stages/03_feature_selection/src/run.py}
+          environment_key: default
+        - task_key: s04_model_training
+          depends_on: [{task_key: s03_feature_selection}]
+          spark_python_task: {python_file: ../stages/04_model_training/src/run.py}
+          environment_key: default
+        - task_key: s05_model_test
+          depends_on: [{task_key: s04_model_training}]
+          spark_python_task: {python_file: ../stages/05_model_test/src/run.py}
+          environment_key: default
+        - task_key: s06_mlops
+          depends_on: [{task_key: s05_model_test}]
+          spark_python_task: {python_file: ../stages/06_mlops/src/run.py}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec: {client: "2", dependencies: ["../common"]}
+      schedule: {quartz_cron_expression: "0 0 6 5 * ?", timezone_id: "Asia/Kolkata", pause_status: UNPAUSED}

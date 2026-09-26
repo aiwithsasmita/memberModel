@@ -1,0 +1,29 @@
+bundle:
+  name: member-risk-model
+
+include:
+  - pipelines/pipeline_job.yml
+  - stages/*/job.yml
+  - tools/code_review_agent/resources/*.yml
+
+variables:
+  catalog: {description: "Model catalog"}
+  source_catalog: {description: "Source data catalog"}
+  platform_schema: {default: aidlc_platform}
+  claude_endpoint: {description: "AI Gateway endpoint for Claude"}
+  gpt_endpoint: {description: "AI Gateway endpoint for GPT"}
+  pipeline_sp: {description: "Service principal the jobs run as"}
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables: {catalog: mrs_dev, source_catalog: src_prod_readonly, claude_endpoint: databricks-claude,
+                gpt_endpoint: databricks-gpt-review, pipeline_sp: sp-aidlc-agents}
+  test:
+    variables: {catalog: mrs_test, source_catalog: src_prod_readonly, claude_endpoint: databricks-claude,
+                gpt_endpoint: databricks-gpt-review, pipeline_sp: sp-aidlc-ci}
+  prod:
+    mode: production
+    variables: {catalog: mrs_prod, source_catalog: src_prod_readonly, claude_endpoint: databricks-claude,
+                gpt_endpoint: databricks-gpt-review, pipeline_sp: sp-aidlc-ci}

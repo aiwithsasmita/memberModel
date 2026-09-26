@@ -1,0 +1,2 @@
+expected_rules: [LEAKAGE]
+should_block: true

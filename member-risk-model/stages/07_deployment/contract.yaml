@@ -1,0 +1,16 @@
+# Data contract for 07_deployment. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 07_deployment
+inputs:
+  feature_store:
+    table: "${catalog}.mrs.feature_store"
+    keys: []          # declared by the producing stage
+  selected_features:
+    table: "${catalog}.mrs.selected_features"
+    keys: []          # declared by the producing stage
+outputs:
+  member_risk_scores:
+    table: "${catalog}.mrs.member_risk_scores"
+    keys: [member_id, score_date, cutoff_month]
+    required_columns: []   # fill from the stage spec
+    versioned: true

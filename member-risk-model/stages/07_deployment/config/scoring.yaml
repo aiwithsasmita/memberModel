@@ -1,0 +1,12 @@
+# Batch scoring for 07_deployment.
+version: 1
+model_alias: champion
+cutoffs:
+  - {cutoff_month: 0, run_on: "01-01"}
+  - {cutoff_month: 2, run_on: "03-01"}
+  - {cutoff_month: 5, run_on: "06-01"}
+  - {cutoff_month: 8, run_on: "09-01"}
+output_table: "${catalog}.mrs.member_risk_scores"
+write_mode: append
+columns: [member_id, score_date, cutoff_month, risk_score_relative, risk_score_base, pred_total, model_version]
+post_deploy_checks: {max_null_rate: 0.0, max_mean_shift_pct: 10}

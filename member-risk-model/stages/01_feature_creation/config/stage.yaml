@@ -1,0 +1,11 @@
+# Stage config: every tunable value for Feature creation lives here or in config/sources.yaml.
+stage:
+  id: 01_feature_creation
+  title: Feature creation
+  spec: specs/001-feature-creation
+  owners: "@org/feature-creation-owners"
+  gate: Data Gate
+params:
+  claims_lag_days: 30
+  lookback_months: 36
+  hcc_version: V28

@@ -1,0 +1,366 @@
+<title>Member Risk AI-DLC Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page:#f2f4f3; --surface:#fbfcfb; --surface-2:#e9edeb; --ink:#13202a; --ink-2:#44525c; --muted:#7b8790;
+  --line:#d5dcd9; --ring:rgba(19,32,42,.12);
+  --agent:#5b4bc4; --agent-wash:rgba(91,75,196,.10);
+  --human:#b8741a; --human-wash:rgba(184,116,26,.12);
+  --auto:#0b7a75; --auto-wash:rgba(11,122,117,.10);
+  --warn:#c0392b; --hl:rgba(11,122,117,.16);
+  --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
+  --page:#0f1417; --surface:#161d21; --surface-2:#1e272c; --ink:#eef3f1; --ink-2:#b4c0c6; --muted:#83909a;
+  --line:#2c373d; --ring:rgba(255,255,255,.10);
+  --agent:#9d91f0; --agent-wash:rgba(157,145,240,.14); --human:#e0a24a; --human-wash:rgba(224,162,74,.14);
+  --auto:#3cc1b9; --auto-wash:rgba(60,193,185,.12); --warn:#ef7063; --hl:rgba(60,193,185,.18);}}
+:root[data-theme="dark"]{color-scheme:dark;
+  --page:#0f1417; --surface:#161d21; --surface-2:#1e272c; --ink:#eef3f1; --ink-2:#b4c0c6; --muted:#83909a;
+  --line:#2c373d; --ring:rgba(255,255,255,.10);
+  --agent:#9d91f0; --agent-wash:rgba(157,145,240,.14); --human:#e0a24a; --human-wash:rgba(224,162,74,.14);
+  --auto:#3cc1b9; --auto-wash:rgba(60,193,185,.12); --warn:#ef7063; --hl:rgba(60,193,185,.18);}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:28px 56px;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:30px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:20px;font-weight:700}
+h3{font-size:15px;font-weight:600}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lead{color:var(--ink-2);max-width:78ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--ring);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--ink-2)}
+.key{display:inline-flex;align-items:center;gap:7px}
+.sw{width:14px;height:14px;border-radius:4px;border:2px solid}
+.scroll{overflow-x:auto}
+svg text{font-family:var(--sans)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+@media (max-width:980px){.grid2{grid-template-columns:1fr}}
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.7;margin:0;padding:0;list-style:none}
+.tree li{display:grid;grid-template-columns:minmax(0,auto) 1fr;gap:12px;align-items:baseline;padding:1px 6px;border-radius:6px}
+.tree li.hl{background:var(--hl)}
+.tree .nm{white-space:pre;color:var(--ink)}
+.tree .nm.dir{font-weight:500}
+.tree .ds{font-family:var(--sans);font-size:12.5px;color:var(--muted);min-width:0}
+.tag{font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:1px 6px;border-radius:999px;margin-left:6px;white-space:nowrap;border:1px solid}
+.t-g{color:var(--agent);border-color:var(--agent);background:var(--agent-wash)}
+.t-l{color:var(--auto);border-color:var(--auto);background:var(--auto-wash)}
+.t-lock{color:var(--human);border-color:var(--human);background:var(--human-wash)}
+.t-cfg{color:var(--ink-2);border-color:var(--line)}
+.changes{display:flex;flex-wrap:wrap;gap:8px}
+.chg{appearance:none;font:inherit;font-size:13.5px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.chg[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chg:focus-visible,.tab:focus-visible{outline:2px solid var(--auto);outline-offset:2px}
+.stages{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+@media (max-width:640px){.stages{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.st{border:1px solid var(--line);border-radius:8px;padding:6px 3px;text-align:center;font-size:10.5px;overflow-wrap:anywhere;color:var(--muted);line-height:1.25}
+.st b{display:block;font-family:var(--mono);font-size:12px}
+.st.run{background:var(--auto-wash);border-color:var(--auto);color:var(--ink)}
+.st.edit{background:var(--auto);border-color:var(--auto);color:#fff}
+.st.edit b{color:#fff}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:1fr}}
+.fact{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.fact span{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.fact div{font-size:14px}
+.files{font-family:var(--mono);font-size:12.5px;margin:0;padding-left:18px;color:var(--ink)}
+.appr{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--human-wash);color:var(--ink);border:1px solid var(--human)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+td code,li code,p code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.anatomy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:820px){.anatomy{grid-template-columns:1fr}}
+.cell{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.cell code{font-family:var(--mono);font-size:12.5px;font-weight:500}
+.cell p{margin:0;font-size:13.5px;color:var(--ink-2)}
+.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--ink-2)}
+.rules b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <span class="eyebrow">Member risk model · AI-DLC on Databricks</span>
+    <h1>Member Risk AI-DLC Blueprint</h1>
+    <p class="lead">How every change moves from idea to production: specs approved and locked, code built by agents with skills, reviewed by an AI reviewer, approved by code owners, and rebuilt automatically, in a repo where each lifecycle stage is an independent, config-driven module.</p>
+  </header>
+
+  <!-- 1. LIFECYCLE -->
+  <section class="panel" aria-labelledby="h-flow">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:baseline">
+      <h2 id="h-flow">1. End-to-end lifecycle</h2>
+      <div class="legend">
+        <span class="key"><span class="sw" style="border-color:var(--human);background:var(--human-wash)"></span>Human decision (name + timestamp recorded)</span>
+        <span class="key"><span class="sw" style="border-color:var(--agent);background:var(--agent-wash)"></span>AI agent</span>
+        <span class="key"><span class="sw" style="border-color:var(--auto);background:var(--auto-wash)"></span>Automated (CI, jobs)</span>
+      </div>
+    </div>
+    <div class="scroll"><svg id="flow" viewBox="0 0 1200 560" style="min-width:880px;width:100%" role="img" aria-label="AI-DLC lifecycle from change request to production and the drift loop"></svg></div>
+  </section>
+
+  <!-- 2. REPO + CHANGE IMPACT -->
+  <section class="grid2">
+    <div class="panel" aria-labelledby="h-repo">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 id="h-repo">2. AI-ready repository</h2>
+        <div class="legend" style="font-size:12px">
+          <span><span class="tag t-g">GLOBAL</span> skill or rule for every stage</span>
+          <span><span class="tag t-l">LOCAL</span> skill for one stage</span>
+          <span><span class="tag t-lock">LOCKED</span> owner approval only</span>
+          <span><span class="tag t-cfg">CONFIG</span> change without code</span>
+        </div>
+      </div>
+      <div class="scroll"><ul class="tree" id="tree"></ul></div>
+    </div>
+
+    <div class="panel" aria-labelledby="h-impact" style="align-self:start;position:sticky;top:env(safe-area-inset-top,0px)">
+      <h2 id="h-impact">3. What a change touches</h2>
+      <p class="lead" style="font-size:14px">Pick a change. The folders it touches light up in the repo, and the stages below show what reruns.</p>
+      <div class="changes" id="changes" role="group" aria-label="Change types"></div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:6px">Pipeline stages · edited (solid) and rerun (tinted)</div>
+        <div class="stages" id="stages"></div>
+      </div>
+      <div class="facts" id="facts"></div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:6px">Files to add or edit</div>
+        <ul class="files" id="files"></ul>
+      </div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:6px">Approvals</div>
+        <div class="appr" id="appr"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. STAGE ANATOMY -->
+  <section class="panel" aria-labelledby="h-anat">
+    <h2 id="h-anat">4. Every stage is the same self-contained module</h2>
+    <p class="lead" style="font-size:14px">Stages never import each other. They talk only through versioned Delta tables whose schema is declared in each stage's <code>contract.yaml</code>. That's what lets one stage change, rerun or be replaced without touching the others.</p>
+    <div class="anatomy">
+      <div class="cell"><code>config/stage.yaml</code><p>Inputs, outputs, parameters, feature flags. Most changes are edits here, with no code.</p></div>
+      <div class="cell"><code>config/&lt;registry&gt;.yaml</code><p>Plug-in lists: sources, features, selection methods, models, monitors. Add an entry to add a capability.</p></div>
+      <div class="cell"><code>contract.yaml</code><p>Input and output table schemas and keys. The pipeline checks contracts before a stage runs.</p></div>
+      <div class="cell"><code>src/</code><p>Stage logic, plus <code>plugins/</code> for registry entries. Uses only <code>common/</code> helpers, never another stage.</p></div>
+      <div class="cell"><code>tests/</code><p>Unit, leakage and contract tests. The review agent and CI run them on every PR.</p></div>
+      <div class="cell"><code>skills/ + AGENTS.md</code><p>Local skills and rules the coding agent loads when working in this stage, on top of the global ones.</p></div>
+      <div class="cell"><code>job.yml</code><p>This stage's Databricks job (bundle resource). Runs alone or as a task in the full pipeline.</p></div>
+      <div class="cell"><code>CODEOWNERS entry</code><p>One owner group per stage. Only they can approve changes to it.</p></div>
+      <div class="cell"><code>README.md</code><p>What the stage does, its contract and how to extend it. Linked from its spec.</p></div>
+    </div>
+  </section>
+
+  <!-- 5. RULES -->
+  <section class="panel" aria-labelledby="h-rules">
+    <h2 id="h-rules">5. Rules that keep it automated and safe</h2>
+    <ol class="rules">
+      <li><b>One change, one branch, one spec folder.</b> <code>feature/NNN-name</code> with <code>specs/NNN-name/</code> (spec, plan, tasks).</li>
+      <li><b>No code before an approved spec.</b> <code>/speckit.analyze</code> must be clean; the tech lead approves; the approval (name, time) is written to <code>gates/</code> and the spec is locked by CODEOWNERS.</li>
+      <li><b>Changing a locked spec reopens approval.</b> Any edit to an approved spec needs the spec owner again and starts a new pipeline run on the branch.</li>
+      <li><b>Every changed file is named by a task</b> with the FR IDs it implements; the review agent blocks untraced code and assumptions.</li>
+      <li><b>Only code owners approve their stage.</b> Branch protection: PR required, owner approval, AI review and CI must pass.</li>
+      <li><b>Reruns start at the earliest changed stage</b> and flow downstream through the contracts. Nothing upstream reruns.</li>
+      <li><b>The evaluation in 05_model_test is locked.</b> Models compete on it; only the model owner can change it.</li>
+      <li><b>Agents propose, people decide.</b> Agents never merge, promote or deploy to production.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+/* ---------------- 1. Lifecycle diagram ---------------- */
+(function(){
+  const svg=document.getElementById("flow"), NS="http://www.w3.org/2000/svg";
+  const el=(t,a,p)=>{const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);(p||svg).appendChild(n);return n};
+  const txt=(x,y,s,a={})=>{const t=el("text",Object.assign({x,y,"text-anchor":"middle","font-size":13,fill:"var(--ink)"},a));t.textContent=s;return t};
+  const defs=el("defs",{});
+  [["a","var(--muted)"],["h","var(--human)"],["g","var(--agent)"],["t","var(--auto)"]].forEach(([id,c])=>{
+    const m=el("marker",{id:"ar-"+id,viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto-start-reverse"},defs);
+    el("path",{d:"M0 0L10 5L0 10z",fill:c},m)});
+  const K={h:["var(--human)","var(--human-wash)"],g:["var(--agent)","var(--agent-wash)"],t:["var(--auto)","var(--auto-wash)"],n:["var(--muted)","var(--surface-2)"]};
+  const W=196,H=78;
+  const box=(cx,cy,kind,num,title,l1,l2,lock)=>{
+    const [s,f]=K[kind];
+    el("rect",{x:cx-W/2,y:cy-H/2,width:W,height:H,rx:10,fill:f,stroke:s,"stroke-width":kind==="h"?2.2:1.4});
+    el("circle",{cx:cx-W/2+16,cy:cy-H/2+16,r:10,fill:s});
+    txt(cx-W/2+16,cy-H/2+20,num,{"font-size":11,"font-weight":700,fill:"#fff"});
+    txt(cx+8,cy-H/2+22,title,{"font-weight":700,"font-size":13.5});
+    txt(cx,cy+6,l1,{"font-size":12,fill:"var(--ink-2)"});
+    if(l2)txt(cx,cy+22,l2,{"font-size":12,fill:"var(--ink-2)"});
+    if(lock)txt(cx+W/2-14,cy-H/2+20,"🔒",{"font-size":12});
+  };
+  const arrow=(d,c="a")=>el("path",{d,fill:"none",stroke:c==="a"?"var(--muted)":K[c][0],"stroke-width":1.6,"marker-end":`url(#ar-${c})`});
+  const xs=[118,354,590,826,1062], r1=74, r2=206, r3=338, r4=470;
+  // row 1 (left to right)
+  box(xs[0],r1,"n","1","Change request","feature, logic, model,","or drift alert");
+  box(xs[1],r1,"t","2","Feature branch","feature/NNN-name","+ specs/NNN-name/");
+  box(xs[2],r1,"g","3","AI-ready context","constitution.md · AGENTS.md","DEVELOPER.md · skills");
+  box(xs[3],r1,"g","4","Spec Kit","specify → clarify →","plan → tasks");
+  box(xs[4],r1,"g","5","Analyze","/speckit.analyze","no critical issues");
+  // row 2 (right to left)
+  box(xs[4],r2,"h","6","Spec approved","tech lead · name + time","spec locked",true);
+  box(xs[3],r2,"g","7","Implement","code owner + agent","+ stage skills");
+  box(xs[2],r2,"g","8","AI-DLC review","traced · exact FRs ·","no assumptions");
+  box(xs[1],r2,"t","9","PR raised","findings, tests,","spec links attached");
+  box(xs[0],r2,"h","10","Code owner","approves own stage","name + time",true);
+  // row 3 (left to right)
+  box(xs[0],r3,"t","11","Merge + CI","tests · bundle deploy","to dev/test");
+  box(xs[1],r3,"t","12","Pipeline rebuild","from earliest changed","stage onward");
+  box(xs[2],r3,"t","13","Champion vs","challenger on the","locked evaluation");
+  box(xs[3],r3,"h","14","Promotion","deployment job","approve · name + time",true);
+  box(xs[4],r3,"t","15","Live scoring","batch scoring at","each cutoff");
+  // row 4: ops loop
+  box(xs[4],r4,"t","16","Monitoring","feature + prediction","drift, calibration");
+  box(xs[3],r4,"g","17","AI Ops agent","diagnose · open CR","auto-retrain challenger");
+  // arrows row1
+  for(let i=0;i<4;i++)arrow(`M${xs[i]+W/2} ${r1}H${xs[i+1]-W/2-4}`);
+  arrow(`M${xs[4]} ${r1+H/2}V${r2-H/2-4}`);
+  for(let i=4;i>0;i--)arrow(`M${xs[i]-W/2} ${r2}H${xs[i-1]+W/2+4}`);
+  arrow(`M${xs[0]} ${r2+H/2}V${r3-H/2-4}`);
+  for(let i=0;i<4;i++)arrow(`M${xs[i]+W/2} ${r3}H${xs[i+1]-W/2-4}`);
+  arrow(`M${xs[4]} ${r3+H/2}V${r4-H/2-4}`);
+  arrow(`M${xs[4]-W/2} ${r4}H${xs[3]+W/2+4}`);
+  // retrain loop: agent -> pipeline rebuild (row3 box 12)
+  arrow(`M${xs[3]-W/2} ${r4}H${xs[1]}V${r3+H/2+4}`,"g");
+  txt(xs[2]-20,r4-10,"config-only fix or drift: retrain as challenger",{"font-size":12,fill:"var(--agent)","font-weight":600});
+  // code-change loop: agent -> change request (row1 box 1)
+  arrow(`M${xs[3]-W/2+10} ${r4+H/2}V${r4+H/2+22}H8V${r1}H${xs[0]-W/2-4}`,"g");
+  txt(xs[1]+10,r4+H/2+16,"needs a code change: new change request and branch",{"font-size":12,fill:"var(--agent)","font-weight":600});
+  // spec edit loop: locked spec changed -> back to spec approval
+  txt(xs[3]+4,r2-H/2-8,"spec edited after approval → re-approve",{"font-size":11.5,fill:"var(--human)","font-weight":600});
+})();
+
+/* ---------------- 2. Repository tree ---------------- */
+const TREE=[
+ ["member-risk-model/","",0,"dir",[]],
+ ["AGENTS.md","Rules every coding agent reads first",1,"",["g"]],
+ ["DEVELOPER.md","How people work: branches, specs, PRs, approvals",1,"",[]],
+ ["CODEOWNERS","One owner group per stage; tech lead owns specs",1,"",["lock"]],
+ ["databricks.yml","Bundle: dev / test / prod targets; includes every stage's job.yml",1,"",[]],
+ [".specify/","Spec Kit",1,"dir",[]],
+ ["memory/constitution.md","Project rules (time splits, no leakage, locked eval, no PHI)",2,"",["g","lock"]],
+ ["templates/","Spec, plan and tasks templates (tasks carry FR IDs)",2,"",["lock"]],
+ [".github/workflows/","CI",1,"dir",[]],
+ ["ci.yml","Tests + contract checks on every PR",2,"",[]],
+ ["ai-code-review.yml","AI-DLC review agent on every PR",2,"",[]],
+ ["deploy.yml","Deploy to test/prod after merge and approval",2,"",[]],
+ ["skills/","Global skills (all stages)",1,"dir",["g"]],
+ ["aidlc-constitution/","How to apply the rules; when to stop and ask",2,"dir",["g"]],
+ ["claims-data-rules/","Claims lag, reversals, member-months, V28",2,"dir",["g"]],
+ ["leakage-checks/","Prove the as-of date is respected",2,"dir",["g"]],
+ ["mlflow-traceability/","What every run and model must log",2,"dir",["g"]],
+ ["config-driven-module/","Add a registry entry instead of new code",2,"dir",["g"]],
+ ["gate-review/ · request-code-review/","Evidence, gates and AI review",2,"dir",["g"]],
+ ["specs/","One folder per feature or change",1,"dir",["lock"]],
+ ["001-feature-creation/ …","spec.md · plan.md · tasks.md · approval.md",2,"dir",["lock"]],
+ ["NNN-your-next-change/","Created on the feature branch",2,"dir",[]],
+ ["gates/","Approval records: gate, approver, timestamp, evidence",1,"dir",["lock"]],
+ ["common/","Shared helpers only: config loader, IO, MLflow, formulas",1,"dir",[]],
+ ["pipelines/","Orchestration only",1,"dir",[]],
+ ["pipeline.yaml","Stage order, contracts, schedules, triggers",2,"",["cfg"]],
+ ["stages/","Eight independent modules",1,"dir",[]],
+ ["01_feature_creation/","Raw → clean member, claims, Rx, MMR tables",2,"dir",[]],
+ ["config/sources.yaml","Source registry",3,"",["cfg"]],
+ ["skills/add-source/","",3,"dir",["l"]],
+ ["02_feature_engineering/","Clean tables → feature tables",2,"dir",[]],
+ ["config/features.yaml","Feature registry: name, logic, owner, FR, enabled",3,"",["cfg"]],
+ ["src/plugins/","One file per feature group",3,"dir",[]],
+ ["skills/add-feature/","",3,"dir",["l"]],
+ ["03_feature_selection/","Feature tables → selected feature set",2,"dir",[]],
+ ["config/selection.yaml","Methods and thresholds (ablation, SHAP, correlation)",3,"",["cfg"]],
+ ["skills/add-selection-method/","",3,"dir",["l"]],
+ ["04_model_training/","Selected features → trained candidates",2,"dir",[]],
+ ["config/models.yaml","Model registry + search spaces + training window",3,"",["cfg"]],
+ ["src/plugins/","One file per algorithm (LightGBM, CatBoost …)",3,"dir",[]],
+ ["skills/add-model/","",3,"dir",["l"]],
+ ["05_model_test/","Candidates → evaluation vs CMS and champion",2,"dir",[]],
+ ["config/evaluation.yaml","Locked evaluation protocol + golden test",3,"",["lock"]],
+ ["skills/cms-risk-comparison/","",3,"dir",["l"]],
+ ["06_mlops/","Registry, aliases, champion/challenger, promotion",2,"dir",[]],
+ ["config/promotion.yaml","Promotion rules and approver groups",3,"",["cfg"]],
+ ["07_deployment/","Batch scoring and bundle targets",2,"dir",[]],
+ ["config/scoring.yaml","Cutoffs, schedules, output tables",3,"",["cfg"]],
+ ["skills/deployment/","",3,"dir",["l"]],
+ ["08_aiops/","Monitors, alerts and agents",2,"dir",[]],
+ ["config/monitors.yaml","Drift and calibration thresholds, alerts",3,"",["cfg"]],
+ ["config/agents.yaml","Ops, review, deployment agents: endpoints, budgets",3,"",["cfg"]],
+ ["skills/drift-triage/","",3,"dir",["l"]],
+ ["each stage also has","config/stage.yaml · contract.yaml · src/ · tests/ · AGENTS.md · job.yml · README.md",2,"note",[]],
+ ["tools/code_review_agent/","The AI-DLC review agent package",1,"dir",[]],
+];
+const tagHtml={g:'<span class="tag t-g">GLOBAL</span>',l:'<span class="tag t-l">LOCAL</span>',lock:'<span class="tag t-lock">LOCKED</span>',cfg:'<span class="tag t-cfg">CONFIG</span>'};
+const treeEl=document.getElementById("tree");
+TREE.forEach((n,i)=>{
+  const [name,desc,depth,kind,tags]=n;
+  const li=document.createElement("li");li.id="node-"+i;
+  const pad="  ".repeat(depth)+(depth?"└ ":"");
+  li.innerHTML=`<span class="nm ${kind==="dir"?"dir":""}" style="${kind==="note"?"color:var(--muted);font-style:italic":""}">${pad}${name}</span><span class="ds">${desc}${tags.map(t=>tagHtml[t]).join("")}</span>`;
+  treeEl.appendChild(li);
+});
+const idx=name=>TREE.findIndex(n=>n[0]===name);
+const stageIdx=s=>TREE.findIndex(n=>n[0].startsWith(s));
+function under(stage,child){const s=stageIdx(stage);for(let i=s+1;i<TREE.length;i++){if(TREE[i][2]<=2)break;if(TREE[i][0]===child)return i}return -1}
+
+/* ---------------- 3. Change impact ---------------- */
+const STAGE_NAMES=["Feature creation","Feature engineering","Feature selection","Model training","Model test","MLOps","Deployment","AI Ops"];
+const CHANGES=[
+ {k:"New data source",edit:[1],spec:"Yes, new spec folder",config:"Config + connector code",
+  files:["stages/01_feature_creation/config/sources.yaml","stages/01_feature_creation/src/plugins/&lt;source&gt;.py","stages/01_feature_creation/contract.yaml","specs/NNN-new-source/"],
+  hl:[["01_feature_creation/","config/sources.yaml"]],appr:["Spec: tech lead","Code: feature creation owners","Data Gate","Promotion"]},
+ {k:"New feature",edit:[2],spec:"Yes, new spec folder",config:"Registry entry + one plugin file",
+  files:["stages/02_feature_engineering/config/features.yaml (new entry)","stages/02_feature_engineering/src/plugins/&lt;feature&gt;.py","stages/02_feature_engineering/tests/test_&lt;feature&gt;.py","specs/NNN-new-feature/"],
+  hl:[["02_feature_engineering/","config/features.yaml"],["02_feature_engineering/","src/plugins/"]],appr:["Spec: tech lead","Code: feature engineering owners","Feature Gate","Promotion"],
+  note:"Automatic ablation: kept only if the gain meets the rule in the spec."},
+ {k:"Feature logic change",edit:[2],spec:"Yes, spec change (re-approval)",config:"Code change in one plugin",
+  files:["stages/02_feature_engineering/src/plugins/&lt;feature&gt;.py","its tests","specs/NNN-…/spec.md (FR updated)"],
+  hl:[["02_feature_engineering/","src/plugins/"]],appr:["Spec re-approval: tech lead","Code: feature engineering owners","Feature Gate","Promotion"],
+  note:"Feature diff report compares old vs new distributions."},
+ {k:"Selection rule change",edit:[3],spec:"Only if the method is new",config:"Config only",
+  files:["stages/03_feature_selection/config/selection.yaml"],hl:[["03_feature_selection/","config/selection.yaml"]],appr:["Code: selection owners","Promotion"]},
+ {k:"New algorithm",edit:[4],spec:"Yes, new spec folder",config:"Registry entry + one plugin file",
+  files:["stages/04_model_training/config/models.yaml (new entry + search space)","stages/04_model_training/src/plugins/&lt;algo&gt;.py","stages/04_model_training/tests/test_&lt;algo&gt;.py","specs/NNN-new-algorithm/"],
+  hl:[["04_model_training/","config/models.yaml"],["04_model_training/","src/plugins/"]],appr:["Spec: tech lead","Code: training owners","Model Gate","Promotion"],
+  note:"Joins the leaderboard; becomes challenger only if it beats the champion."},
+ {k:"Retrain window or params",edit:[4],spec:"No",config:"Config only",
+  files:["stages/04_model_training/config/models.yaml"],hl:[["04_model_training/","config/models.yaml"]],appr:["Code: training owners","Promotion"]},
+ {k:"Evaluation change",edit:[5],spec:"Yes, locked: model owner",config:"Locked config",
+  files:["stages/05_model_test/config/evaluation.yaml","specs/NNN-evaluation-change/"],hl:[["05_model_test/","config/evaluation.yaml"]],
+  appr:["Spec: tech lead + model owner","Code: model owner only","Model Gate","Promotion"],note:"Champion and challengers are all re-scored on the new protocol."},
+ {k:"Scoring schedule",edit:[7],spec:"No",config:"Config only",
+  files:["stages/07_deployment/config/scoring.yaml"],hl:[["07_deployment/","config/scoring.yaml"]],appr:["Code: platform owners"]},
+ {k:"Drift → auto retrain",edit:[],run:[4,5,6],spec:"No",config:"Nothing to edit",
+  files:["No files. The AI Ops agent opens a change request and starts the retrain."],hl:[["08_aiops/","config/monitors.yaml"]],appr:["Promotion"],
+  note:"Monitor thresholds in 08_aiops/config/monitors.yaml decide when this fires."},
+ {k:"Monitor threshold",edit:[8],spec:"No",config:"Config only",
+  files:["stages/08_aiops/config/monitors.yaml"],hl:[["08_aiops/","config/monitors.yaml"]],appr:["Code: AI Ops owners"]},
+];
+const chEl=document.getElementById("changes");
+CHANGES.forEach((c,i)=>{const b=document.createElement("button");b.className="chg";b.type="button";b.id="chg-"+i;b.textContent=c.k;b.setAttribute("aria-pressed","false");b.onclick=()=>pick(i);chEl.appendChild(b)});
+function pick(i){
+  const c=CHANGES[i];
+  document.querySelectorAll(".chg").forEach((b,j)=>b.setAttribute("aria-pressed",String(i===j)));
+  const first=c.edit.length?Math.min(...c.edit):Math.min(...c.run);
+  const runs=new Set(); if(c.run)c.run.forEach(s=>runs.add(s));
+  for(let s=first;s<=7;s++)runs.add(s);           // rerun downstream through deployment
+  document.getElementById("stages").innerHTML=STAGE_NAMES.map((n,k)=>{
+    const s=k+1, cls=c.edit.includes(s)?"st edit":(runs.has(s)?"st run":"st");
+    return `<div class="${cls}"><b>0${s}</b>${n}</div>`}).join("");
+  document.getElementById("facts").innerHTML=
+    `<div class="fact"><span>New spec?</span><div>${c.spec}</div></div>`+
+    `<div class="fact"><span>Type of change</span><div>${c.config}</div></div>`+
+    (c.note?`<div class="fact" style="grid-column:1/-1"><span>What happens automatically</span><div>${c.note}</div></div>`:"");
+  document.getElementById("files").innerHTML=c.files.map(f=>`<li>${f}</li>`).join("");
+  document.getElementById("appr").innerHTML=c.appr.map(a=>`<span class="pill">🔒 ${a}</span>`).join("");
+  document.querySelectorAll(".tree li").forEach(li=>li.classList.remove("hl"));
+  c.hl.forEach(([stage,child])=>{
+    const s=stageIdx(stage); if(s>=0)document.getElementById("node-"+s).classList.add("hl");
+    const u=under(stage,child); if(u>=0)document.getElementById("node-"+u).classList.add("hl");
+  });
+  if(c.spec.startsWith("Yes")){const sp=idx("NNN-your-next-change/");if(sp>=0)document.getElementById("node-"+sp).classList.add("hl")}
+}
+pick(1);
+</script>

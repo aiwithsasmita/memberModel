@@ -1,0 +1,70 @@
+# AI-DLC code review agent: runtime configuration
+# Every tunable value lives here. Change it through a PR (tech lead / platform are code owners).
+
+prompt_version: "1.1.0"
+
+llm:
+  endpoint: "databricks-gpt-review"      # AI Gateway / serving endpoint name for the GPT model
+  verifier_endpoint: null                # optional second model for the verify pass (null = same endpoint)
+  temperature: 0.0
+  max_output_tokens: 4000
+  timeout_seconds: 120
+  max_retries: 3
+  # Focused review passes (each is one LLM call per chunk). Remove one to save cost.
+  lenses: ["spec", "constitution", "correctness"]
+
+verify:
+  min_confidence: 80                     # verify pass scores 0-100; only findings at or above are kept
+
+# Spec Kit traceability (specs/NNN-feature/spec.md, plan.md, tasks.md)
+spec_trace:
+  enabled: true
+  features_root: "specs"
+  clarification_marker: "NEEDS CLARIFICATION"
+  require_task_for: ["src/**", "config/**", "resources/**"]   # changes here must be named by a task in tasks.md
+
+limits:
+  max_chars_per_chunk: 24000             # diff + file context sent per LLM call
+  context_lines: 20                      # lines of unchanged code shown around each change
+  max_spec_chars: 8000                   # spec text sent per chunk (most relevant sections only)
+  max_findings_per_file: 15
+
+files:
+  include: ["**/*.py", "**/*.sql", "**/*.yml", "**/*.yaml", "**/*.ipynb"]
+  exclude: ["tests/fixtures/**", "eval/cases/**", "**/*.lock", "docs/**"]
+
+# Fallback only: which spec governs which code when no tasks.md line names the file. First match wins.
+spec_map:
+  - paths: ["src/features/**", "config/features.yaml"]
+    spec: "specs/001-feature-engineering/spec.md"
+  - paths: ["src/training/**", "config/models.yaml"]
+    spec: "specs/002-model-training/spec.md"
+  - paths: ["src/evaluation/**"]
+    spec: "specs/003-evaluation/spec.md"
+  - paths: ["src/common/mlflow*"]
+    spec: "specs/004-mlflow-traceability/spec.md"
+  - paths: ["resources/**", "databricks.yml"]
+    spec: "specs/005-deployment/spec.md"
+  - paths: ["src/agents/**"]
+    spec: "specs/007-agents/spec.md"
+
+constitution_paths:
+  - ".specify/memory/constitution.md"
+  - "AGENTS.md"
+
+# Paths whose changes always need the model owner's approval (locked evaluation protocol).
+protected_paths: ["src/evaluation/**", "config/evaluation.yaml"]
+
+# Catalog names an agent or developer must never write to from code.
+forbidden_write_catalogs: ["mrs_prod", "mrs_test"]
+
+verdict:
+  block_on_severity: ["critical"]        # any verified finding at these severities => block
+  fix_on_severity: ["high", "medium"]    # => fix (PR can merge only after changes or an owner override)
+  ci_fail_on: ["block"]                  # verdicts that fail the CI job
+
+output:
+  delta_table: "aidlc_platform.aidlc_reviews"
+  post_pr_summary: true
+  post_inline_comments: true
+  min_inline_severity: "medium"

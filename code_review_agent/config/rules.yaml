@@ -1,0 +1,146 @@
+# Review rules. Two kinds:
+#   static: deterministic regex checks on ADDED lines (fast, free, never hallucinate)
+#   llm:    semantic checks the GPT reviewer applies with the spec as context
+# Severity: critical | high | medium | low
+
+static:
+  - id: PHI-LOG
+    severity: critical
+    title: "Possible PHI written to logs, prints or MLflow"
+    pattern: '(print|logger\.\w+|logging\.\w+|mlflow\.log_\w+|display)\s*\(.*\b(member_id|mbr_id|ssn|dob|date_of_birth|first_name|last_name|patient_name|address)\b'
+    files: ["**/*.py", "**/*.ipynb"]
+    fix: "Log aggregates or hashed IDs only. Never log member-level identifiers."
+
+  - id: SECRET
+    severity: critical
+    title: "Hardcoded secret or token"
+    pattern: '(dapi[0-9a-f]{32}|sk-[A-Za-z0-9]{20,}|(?i:password|token|secret)\s*=\s*["''][^"'']{8,}["''])'
+    files: ["**/*"]
+    fix: "Use Databricks secrets (dbutils.secrets.get) or environment variables."
+
+  - id: PROD-WRITE
+    severity: critical
+    title: "Code writes to a protected catalog"
+    pattern: '(saveAsTable|insertInto|INSERT\s+INTO|MERGE\s+INTO|CREATE\s+(OR\s+REPLACE\s+)?TABLE|\.table\()\s*\(?\s*["'']?{forbidden_catalogs}\.'
+    files: ["**/*.py", "**/*.sql"]
+    fix: "Read the target catalog from config and deploy to test/prod only through CI."
+
+  - id: RANDOM-SPLIT
+    severity: high
+    title: "Random train/test split (constitution requires time-based splits)"
+    pattern: '(randomSplit\s*\(|train_test_split\s*\(|KFold\s*\(\s*.*shuffle\s*=\s*True)'
+    files: ["src/**/*.py"]
+    fix: "Split by target year as defined in config (train / validation / test years)."
+
+  - id: HARDCODED-PERIOD
+    severity: medium
+    title: "Hardcoded year or date in pipeline code (must come from config)"
+    pattern: '(["'']20[12]\d-\d{2}-\d{2}["'']|[=<>!]=?\s*20[12]\d\b|\b(year|target_year|cutoff)\w*\s*=\s*20[12]\d\b)'
+    files: ["src/**/*.py", "src/**/*.sql"]
+    fix: "Move the value into config/pipeline.yaml and read it through the config loader."
+
+  - id: DRIVER-COLLECT
+    severity: medium
+    title: "Pulls a Spark DataFrame to the driver"
+    pattern: '\.(collect|toPandas)\s*\(\s*\)'
+    files: ["src/**/*.py"]
+    fix: "Aggregate in Spark first, or limit rows explicitly; 5M+ members will not fit on the driver."
+
+  - id: CROSS-JOIN
+    severity: medium
+    title: "Cross join"
+    pattern: '(crossJoin\s*\(|CROSS\s+JOIN)'
+    files: ["src/**/*.py", "src/**/*.sql"]
+    fix: "Confirm the cross join is intended and bounded; otherwise join on keys."
+
+  - id: PY-UDF
+    severity: low
+    title: "Python UDF on Spark data"
+    pattern: '(@udf\b|\budf\s*\(|@pandas_udf\b)'
+    files: ["src/**/*.py"]
+    fix: "Prefer built-in Spark functions; they are much faster at this scale."
+
+  - id: MLFLOW-UNTAGGED
+    severity: high
+    title: "MLflow run started in a file that never sets spec_id / change_request_id tags"
+    pattern: 'mlflow\.start_run\s*\('
+    files: ["src/**/*.py"]
+    file_must_also_contain: 'spec_id'
+    fix: "Use the shared MLflow helper that sets spec_id, task_id, change_request_id, git_commit and data versions."
+
+# PR-level structural checks
+structural:
+  - id: NO-TESTS
+    severity: medium
+    title: "Source code changed but no tests changed"
+    when_changed: ["src/**/*.py"]
+    requires_changed: ["tests/**"]
+    fix: "Add or update tests for the changed module."
+
+  - id: PROTECTED-PATH
+    severity: high
+    title: "Change to the locked evaluation protocol"
+    when_changed: ["{protected_paths}"]
+    requires_changed: ["specs/changes/**"]
+    fix: "Evaluation changes need an approved spec change (specs/changes/CR-xxx) and model owner approval."
+
+# Spec Kit traceability checks (built in, see spec_trace.py; listed here for reference)
+#   UNTRACED-CHANGE     high      changed file under require_task_for is named by no task in any tasks.md
+#   OPEN-CLARIFICATION  critical  touched feature's spec still contains NEEDS CLARIFICATION
+#   TASK-FILE-MISSING   medium    a task marked [X] names a file that does not exist
+#   REQ-MISSING         high      FR-### referenced by a completed task touching these files is not implemented
+#   REQ-PARTIAL         high      ... implemented only in part, or with a different value/definition
+#   REQ-CONTRADICTED    critical  ... code does something different from what the FR says
+# Tip: write FR IDs into task lines, e.g. "- [X] T014 [US1] (FR-003, FR-004) Build ER features in src/features/utilization.py"
+
+llm:
+  - id: LEAKAGE
+    lens: ["correctness", "spec"]
+    severity: critical
+    description: >-
+      Features, targets or filters must use only data with paid_date <= cutoff_date - claims_lag and
+      service_date < cutoff_date. Flag any join, filter or window that can see data on or after the cutoff,
+      any use of target-period data in features, and any as-of date that ignores the claims lag.
+  - id: TIME-SPLIT
+    lens: ["correctness", "constitution"]
+    severity: high
+    description: "Train, validation and test must be separated by target year. Flag random or member-level shuffles across years."
+  - id: UNSPECIFIED-BEHAVIOR
+    lens: ["spec"]
+    severity: high
+    description: >-
+      No assumptions: flag behavior the spec, plan and touched tasks do not ask for: extra filters or exclusions,
+      invented defaults or thresholds, magic constants, renamed outputs, changed grain, silent fallbacks. Quote the
+      line and say which spec item is missing. If it is genuinely needed, the fix is to update the spec first.
+  - id: SPEC-CONFORMANCE
+    lens: ["spec"]
+    severity: high
+    description: "The change must do what the governing spec says: definitions, formulas, table names, keys, outputs. Flag deviations and missing required behavior."
+  - id: EVAL-PROTOCOL
+    lens: ["spec", "constitution"]
+    severity: high
+    description: "Metrics, rescaling, groups, test year and champion/challenger rules are locked. Flag any change to how models are scored."
+  - id: FORMULA-LIBRARY
+    lens: ["constitution"]
+    severity: medium
+    description: "Shared calculations (weights, risk score, rescaling, metrics) must come from the shared formula library, not be re-implemented inline."
+  - id: CONFIG-DRIVEN
+    lens: ["constitution"]
+    severity: medium
+    description: "Tunable values (years, cutoffs, caps, thresholds, feature flags, table names) must come from config, not be hardcoded."
+  - id: TRACEABILITY
+    lens: ["constitution", "correctness"]
+    severity: high
+    description: "Training and evaluation runs must log spec_id, task_id, change_request_id, git commit, input table Delta versions and full config."
+  - id: CORRECTNESS
+    lens: ["correctness"]
+    severity: high
+    description: "Logic bugs: wrong join keys or join type, duplicated rows after joins, wrong aggregation grain, off-by-one date windows, null handling that changes results, wrong weighting."
+  - id: TEST-ADEQUACY
+    lens: ["spec", "correctness"]
+    severity: medium
+    description: "New or changed logic needs tests that would fail if the logic were wrong (not only smoke tests)."
+  - id: SPARK-PERFORMANCE
+    lens: ["correctness"]
+    severity: low
+    description: "Inefficient Spark patterns at 5M+ members: repeated scans, unnecessary shuffles, missing broadcast for small tables, wide UDFs."

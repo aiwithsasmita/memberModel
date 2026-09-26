@@ -1,0 +1,13 @@
+# Standalone job for 02_feature_engineering (runs this stage alone; the full pipeline is pipelines/pipeline_job.yml)
+resources:
+  jobs:
+    mrs_02_feature_engineering:
+      name: mrs-02_feature_engineering-${bundle.target}
+      run_as: {service_principal_name: "${var.pipeline_sp}"}
+      tasks:
+        - task_key: run
+          spark_python_task: {python_file: ./src/run.py}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec: {client: "2", dependencies: ["../../common"]}

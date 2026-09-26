@@ -1,0 +1,9 @@
+# Stage config: every tunable value for MLOps lives here or in config/promotion.yaml.
+stage:
+  id: 06_mlops
+  title: MLOps
+  spec: specs/006-mlops
+  owners: "@org/ml-owners"
+  gate: Promotion
+params:
+  mlflow_experiment: /Shared/mrs/mlops

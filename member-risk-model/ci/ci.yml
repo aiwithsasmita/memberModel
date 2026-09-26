@@ -1,0 +1,17 @@
+# Move to .github/workflows/ci.yml. Runs on every PR: unit, contract and golden tests.
+name: ci
+on: {pull_request: {}}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e common pytest pyyaml
+      - name: Shared and orchestration tests
+        run: pytest -q common/tests tools/tests
+      - name: Stage tests (each stage is independent)
+        run: for s in stages/*/; do echo "== $s"; pytest -q "$s/tests" || exit 1; done
+      - name: Spec approval present for changed specs
+        run: python tools/check_spec_approvals.py --base origin/${{ github.base_ref }}

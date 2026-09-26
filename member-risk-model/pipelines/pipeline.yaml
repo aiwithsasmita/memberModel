@@ -1,0 +1,29 @@
+# Orchestration only: which stages run, in what order, and what triggers them.
+# Stages are wired ONLY through the tables in their contract.yaml files.
+version: 1
+job: mrs_pipeline
+order: [01_feature_creation, 02_feature_engineering, 03_feature_selection, 04_model_training, 05_model_test, 06_mlops]
+separate_jobs:
+  07_deployment: {job: mrs_scoring}     # scheduled by cutoff (config/scoring.yaml)
+  08_aiops: {job: mrs_monitoring}       # scheduled + alert driven
+gates_required:                          # task 0 blocks the run unless these are approved for the spec
+  01_feature_creation: []
+  02_feature_engineering: [Data Gate]
+  03_feature_selection: [Data Gate, Target Gate]
+  04_model_training: [Data Gate, Target Gate, Feature Gate]
+  05_model_test: [Data Gate, Target Gate, Feature Gate]
+  06_mlops: [Model Gate]
+triggers:
+  schedule_monthly_refresh: {cron: "0 0 6 5 * ?", timezone: "Asia/Kolkata", start_at: 01_feature_creation}
+  table_update: {tables: ["${source_catalog}.claims.medical_claims"], start_at: 01_feature_creation}
+  merge_to_main: {start_at: earliest_changed_stage}       # tools/rerun_from_changes.py
+  drift_alert: {start_at: 04_model_training}               # AI Ops agent: retrain as challenger
+# Which paths map to which stage (used to find the earliest changed stage)
+path_to_stage:
+  "stages/01_feature_creation/**": 01_feature_creation
+  "stages/02_feature_engineering/**": 02_feature_engineering
+  "stages/03_feature_selection/**": 03_feature_selection
+  "stages/04_model_training/**": 04_model_training
+  "stages/05_model_test/**": 05_model_test
+  "stages/06_mlops/**": 06_mlops
+  "common/**": 01_feature_creation      # shared code change: rebuild everything

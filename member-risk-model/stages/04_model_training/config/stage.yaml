@@ -1,0 +1,9 @@
+# Stage config: every tunable value for Model training lives here or in config/models.yaml.
+stage:
+  id: 04_model_training
+  title: Model training
+  spec: specs/004-model-training
+  owners: "@org/ml-owners"
+  gate: none
+params:
+  mlflow_experiment: /Shared/mrs/training

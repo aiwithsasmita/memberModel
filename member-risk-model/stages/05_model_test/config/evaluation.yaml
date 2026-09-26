@@ -1,0 +1,23 @@
+# LOCKED evaluation protocol for 05_model_test (constitution rule 4).
+# Only the model owner may change this file, through an approved spec change. Changing it re-scores
+# the champion and every challenger.
+version: 1
+locked: true
+spec: "MRS-001 section 2A and module M14"
+split_for_gate: test
+test_target_years: [2025]
+cost_cap: 250000
+populations: {main: "not esrd and not hospice", esrd_hospice: "esrd or hospice"}
+runs: [capped, uncapped]
+metrics: [r2, mae, mae_pct, cpm, top1_capture, top5_capture, gini]
+groups: [decile, condition_group, age_band, new_member_flag, actual_cost_band]
+bootstrap: {n: 200, sample_frac: 0.2}
+pr_min_group_weight: 1000
+golden_test: "tests/golden/appendix_a.yaml"
+champion_challenger:
+  challenger_must_beat_champion_on: r2_capped
+  require_bootstrap_ci_above_zero: true
+  pr_band: [0.90, 1.10]
+gate_criteria:
+  r2_gain_vs_cms_at_0_12: 0.08
+  top1_capture_vs_cms: 1.3

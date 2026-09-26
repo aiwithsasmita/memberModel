@@ -1,0 +1,14 @@
+# Stage config: every tunable value for Feature engineering lives here or in config/features.yaml.
+stage:
+  id: 02_feature_engineering
+  title: Feature engineering
+  spec: specs/002-feature-engineering
+  owners: "@org/feature-engineering-owners"
+  gate: Target Gate
+params:
+  target_years: [2023, 2024, 2025]
+  cutoff_months: [0, 2, 5, 8]
+  claims_lag_days: 30
+  lookback_months: 24
+  cost_cap: 250000
+  high_cost_threshold: 100000

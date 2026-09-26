@@ -1,0 +1,24 @@
+# Replace @org/... with your GitHub teams. Branch protection must require code owner review.
+*                                   @org/tech-lead
+/.specify/                          @org/tech-lead
+/specs/                             @org/tech-lead
+/gates/                             @org/tech-lead
+/AGENTS.md                          @org/tech-lead
+/DEVELOPER.md                       @org/tech-lead
+/skills/                            @org/tech-lead
+/common/                            @org/tech-lead @org/platform-owners
+/pipelines/                         @org/platform-owners
+/databricks.yml                     @org/platform-owners
+/platform/                          @org/platform-owners
+/tools/                             @org/platform-owners
+/ci/                                @org/platform-owners
+/.github/                           @org/platform-owners
+/stages/01_feature_creation/        @org/feature-creation-owners
+/stages/02_feature_engineering/     @org/feature-engineering-owners
+/stages/03_feature_selection/       @org/feature-engineering-owners
+/stages/04_model_training/          @org/ml-owners
+/stages/05_model_test/              @org/model-owner
+/stages/05_model_test/config/evaluation.yaml  @org/model-owner @org/tech-lead
+/stages/06_mlops/                   @org/ml-owners
+/stages/07_deployment/              @org/platform-owners
+/stages/08_aiops/                   @org/aiops-owners

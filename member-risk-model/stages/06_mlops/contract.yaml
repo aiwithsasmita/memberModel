@@ -1,0 +1,16 @@
+# Data contract for 06_mlops. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 06_mlops
+inputs:
+  candidate_models:
+    table: "${catalog}.mrs.candidate_models"
+    keys: []          # declared by the producing stage
+  comparison_verdicts:
+    table: "${catalog}.mrs.comparison_verdicts"
+    keys: []          # declared by the producing stage
+outputs:
+  model_registry_events:
+    table: "${catalog}.mrs.model_registry_events"
+    keys: [model_version, event_ts]
+    required_columns: []   # fill from the stage spec
+    versioned: true

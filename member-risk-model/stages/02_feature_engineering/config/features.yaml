@@ -1,0 +1,59 @@
+# Feature registry for 02_feature_engineering.
+# Add a feature group = add an entry here + one plugin in src/plugins/<name>.py + its tests.
+# Turn a feature off = enabled: false (no code change). Every entry must cite the spec requirement(s).
+version: 1
+defaults:
+  as_of_rule: "paid_date <= feature_asof_date AND service_date < cutoff_date"   # constitution rule 2
+  keys: [member_id, target_year, cutoff_month]
+feature_groups:
+  demographics_mmr:          # M7a
+    enabled: true
+    plugin: demographics_mmr
+    sources: [member_month_spine]
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-010"]
+  cost_history:              # M7b
+    enabled: true
+    plugin: cost_history
+    sources: [claims_std]
+    params: {windows_months: [3, 6, 12, 24]}
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-011"]
+  current_year_to_date:      # M7c (zero/null when cutoff_month = 0)
+    enabled: true
+    plugin: ytd
+    sources: [claims_std]
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-012"]
+  utilization:               # M7d
+    enabled: true
+    plugin: utilization
+    sources: [claims_std]
+    params: {windows_months: [6, 12]}
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-013"]
+  diagnoses:                 # M7e
+    enabled: true
+    plugin: diagnoses
+    sources: [member_dx_events]
+    params: {hcc_version: V28, ccsr_windows_months: [12, 24]}
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-014"]
+  rx:                        # M7f
+    enabled: true
+    plugin: rx
+    sources: [claims_std]
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-015"]
+  clinical_states_renal:     # M7g (V1.1)
+    enabled: false
+    plugin: clinical_states_renal
+    sources: [member_dx_events, claims_std]
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-016"]
+  history_flags:             # M7h
+    enabled: true
+    plugin: history_flags
+    sources: [member_month_spine]
+    owner: "@org/feature-engineering-owners"
+    spec: ["FR-017"]

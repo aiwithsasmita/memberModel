@@ -1,0 +1,52 @@
+# Bundle resources: run the reviewer and its evaluation inside Databricks.
+# Include from databricks.yml:   include: ["resources/*.yml"]
+resources:
+  jobs:
+    aidlc_code_review:
+      name: aidlc-code-review
+      description: "Review a branch against main (called by other agents, e.g. the change agent)"
+      run_as:
+        service_principal_name: sp-aidlc-agents
+      parameters:
+        - name: base
+          default: origin/main
+        - name: head
+          default: HEAD
+        - name: change_request_id
+          default: ""
+      tasks:
+        - task_key: review
+          notebook_task:
+            notebook_path: ../notebooks/run_review.py
+            base_parameters:
+              base: "{{job.parameters.base}}"
+              head: "{{job.parameters.head}}"
+              change_request_id: "{{job.parameters.change_request_id}}"
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            client: "2"
+            dependencies:
+              - ../   # installs this package
+
+    aidlc_code_review_eval:
+      name: aidlc-code-review-eval
+      description: "Score the reviewer on eval/cases; run after any prompt, rule or endpoint change"
+      run_as:
+        service_principal_name: sp-aidlc-agents
+      schedule:
+        quartz_cron_expression: "0 0 6 ? * MON"
+        timezone_id: "Asia/Kolkata"
+      tasks:
+        - task_key: eval
+          spark_python_task:
+            python_file: ../eval/run_eval.py
+            parameters: ["--cases", "eval/cases", "--mlflow-experiment", "/Shared/aidlc/code_review_eval"]
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            client: "2"
+            dependencies:
+              - ../

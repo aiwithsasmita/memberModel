@@ -1,0 +1,7 @@
+diff --git a/src/features/write.py b/src/features/write.py
+index 8888888..9999999 100644
+--- a/src/features/write.py
++++ b/src/features/write.py
+@@ -3,3 +3,3 @@ def save(df, cfg):
+-    df.write.mode("overwrite").saveAsTable(cfg.feature_table)
++    df.write.mode("overwrite").saveAsTable("mrs_prod.features.member_features")

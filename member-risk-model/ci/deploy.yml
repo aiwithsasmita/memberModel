@@ -1,0 +1,34 @@
+# Move to .github/workflows/deploy.yml. On merge to main: record gates, deploy to test, rerun changed stages,
+# then deploy to prod after the "production" environment approval.
+name: deploy
+on: {push: {branches: [main]}}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2}
+      - uses: databricks/setup-cli@main
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pyyaml databricks-sdk
+      - name: Record gate approvals merged in this commit
+        env: {DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}", DATABRICKS_TOKEN: "${{ secrets.DATABRICKS_TOKEN }}"}
+        run: python tools/record_gates.py --commit ${{ github.sha }}
+      - name: Deploy bundle to test
+        env: {DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}", DATABRICKS_TOKEN: "${{ secrets.DATABRICKS_TOKEN }}"}
+        run: databricks bundle deploy -t test
+      - name: Rerun from the earliest changed stage
+        env: {DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}", DATABRICKS_TOKEN: "${{ secrets.DATABRICKS_TOKEN }}"}
+        run: git diff --name-only HEAD~1 HEAD | python tools/rerun_from_changes.py --run --job-id ${{ vars.TEST_PIPELINE_JOB_ID }}
+  prod:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production        # requires a named reviewer in GitHub environment settings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+      - name: Deploy bundle to prod
+        env: {DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}", DATABRICKS_TOKEN: "${{ secrets.DATABRICKS_TOKEN }}"}
+        run: databricks bundle deploy -t prod

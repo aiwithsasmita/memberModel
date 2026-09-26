@@ -1,0 +1,2 @@
+expected_rules: [MLFLOW-UNTAGGED]
+should_block: false

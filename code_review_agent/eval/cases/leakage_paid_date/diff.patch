@@ -1,0 +1,13 @@
+diff --git a/src/features/cost_history.py b/src/features/cost_history.py
+index 1111111..2222222 100644
+--- a/src/features/cost_history.py
++++ b/src/features/cost_history.py
+@@ -10,6 +10,12 @@ def build_cost_history(claims, snapshot, cfg):
+     """Allowed cost over the 12 months before the cutoff."""
+     joined = claims.join(snapshot, "member_id")
+-    window = joined.filter(F.col("paid_date") <= F.col("feature_asof_date"))
++    # use all claims up to the end of the cutoff month for more signal
++    window = joined.filter(F.col("service_date") <= F.last_day(F.col("cutoff_date")))
++    window = window.filter(F.col("service_date") >= F.add_months(F.col("cutoff_date"), -12))
+     return (window.groupBy("member_id", "target_year", "cutoff_month")
+                   .agg(F.sum("allowed_amt").alias("cost_12m")))

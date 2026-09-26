@@ -1,0 +1,20 @@
+# Feature selection methods for 03_feature_selection. Methods run in order; each is a plugin.
+version: 1
+leakage_audit:
+  shuffle_target_max_r2: 0.01          # M8 target-shuffle test
+  max_single_feature_corr_cutoff0: 0.9  # M8 leakage sniff test
+methods:
+  - name: drop_constant
+    enabled: true
+  - name: drop_high_null
+    enabled: true
+    params: {max_null_rate: 0.98}
+  - name: correlation_prune
+    enabled: true
+    params: {max_abs_corr: 0.97, keep: higher_importance}
+  - name: importance_threshold
+    enabled: true
+    params: {model: lgbm_tweedie, min_gain_share: 0.0005, sample_frac: 0.2}
+  - name: ablation
+    enabled: false                      # used per change request for new features
+    params: {min_r2_gain: 0.005}

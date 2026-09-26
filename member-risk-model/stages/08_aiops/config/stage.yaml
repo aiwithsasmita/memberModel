@@ -1,0 +1,9 @@
+# Stage config: every tunable value for AI Ops lives here or in config/monitors.yaml.
+stage:
+  id: 08_aiops
+  title: AI Ops
+  spec: specs/008-aiops
+  owners: "@org/aiops-owners"
+  gate: none
+params:
+  alert_destination: mrs-alerts

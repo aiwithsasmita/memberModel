@@ -1,0 +1,27 @@
+# Monitors and alerts for 08_aiops. Thresholds here decide when agents act.
+version: 1
+monitors:
+  feature_drift:
+    table: "${catalog}.mrs.feature_store"
+    metric: psi
+    features: top_50_by_importance
+    alert_above: 0.20
+    action: open_change_request_and_retrain_challenger
+  prediction_drift:
+    table: "${catalog}.mrs.member_risk_scores"
+    metric: mean_score_shift_pct
+    alert_above: 10
+    action: open_change_request
+  calibration:
+    table: "${catalog}.mrs.eval_pr"
+    metric: predicted_over_actual
+    by: condition_group
+    alert_outside: [0.95, 1.05]
+    action: open_change_request_and_retrain_challenger
+  freshness:
+    type: anomaly_detection
+    tables: ["${source_catalog}.claims.medical_claims"]
+    action: notify_owner
+  job_failures:
+    jobs: [mrs_pipeline, mrs_scoring]
+    action: triage_and_repair_once

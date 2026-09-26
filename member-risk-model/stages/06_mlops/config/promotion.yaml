@@ -1,0 +1,12 @@
+# Promotion rules for 06_mlops.
+version: 1
+model_name: "${catalog}.mrs.member_risk_model"
+aliases: {production: champion, candidate: challenger}
+deployment_job:
+  approval_tasks:
+    - name: model_gate_actuary
+      approver_group: "actuarial-approvers"
+    - name: model_gate_ml_lead
+      approver_group: "ml-lead-approvers"
+  require_comparison_verdict: win
+lineage_tags_required: [spec_id, task_id, change_request_id, git_commit, feature_store_version, evaluation_version]

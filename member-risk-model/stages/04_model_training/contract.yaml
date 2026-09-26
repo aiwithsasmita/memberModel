@@ -1,0 +1,21 @@
+# Data contract for 04_model_training. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 04_model_training
+inputs:
+  model_dataset:
+    table: "${catalog}.mrs.model_dataset"
+    keys: []          # declared by the producing stage
+  selected_features:
+    table: "${catalog}.mrs.selected_features"
+    keys: []          # declared by the producing stage
+outputs:
+  candidate_models:
+    table: "${catalog}.mrs.candidate_models"
+    keys: [run_id]
+    required_columns: []   # fill from the stage spec
+    versioned: true
+  pred_candidates:
+    table: "${catalog}.mrs.pred_candidates"
+    keys: [member_id, target_year, cutoff_month, model_name]
+    required_columns: []   # fill from the stage spec
+    versioned: true

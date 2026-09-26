@@ -1,0 +1,21 @@
+# Agents run by 08_aiops. All use AI Gateway endpoints and run as sp-aidlc-agents.
+version: 1
+agents:
+  aiops_agent:
+    endpoint: "${claude_endpoint}"
+    framework: langgraph
+    memory: lakebase
+    max_tokens_per_run: 200000
+    allowed_actions: [read_metrics, read_logs, open_change_request, repair_run_once, start_challenger_retrain]
+    forbidden_actions: [merge, promote, deploy_prod, write_prod]
+  change_agent:
+    endpoint: "${claude_endpoint}"
+    scope: config_only
+    allowed_paths: ["stages/*/config/*.yaml"]
+    forbidden_paths: ["stages/05_model_test/config/evaluation.yaml", "specs/**", ".specify/**"]
+  deployment_agent:
+    endpoint: "${gpt_endpoint}"
+    checks: [gates_approved, ci_green, review_pass, challenger_beats_champion, post_deploy_smoke]
+  code_review_agent:
+    package: tools/code_review_agent
+    endpoint: "${gpt_endpoint}"

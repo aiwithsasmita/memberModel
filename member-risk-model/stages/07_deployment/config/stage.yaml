@@ -1,0 +1,9 @@
+# Stage config: every tunable value for Deployment lives here or in config/scoring.yaml.
+stage:
+  id: 07_deployment
+  title: Deployment
+  spec: specs/007-deployment
+  owners: "@org/platform-owners"
+  gate: Production deploy
+params:
+  cluster_policy: serverless

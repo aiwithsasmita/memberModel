@@ -1,0 +1,19 @@
+# Data contract for 08_aiops. Stages exchange data ONLY through these tables.
+# Changing an output (name, keys, required columns) is a breaking change: tell downstream owners and update their contracts.
+stage: 08_aiops
+inputs:
+  member_risk_scores:
+    table: "${catalog}.mrs.member_risk_scores"
+    keys: []          # declared by the producing stage
+  feature_store:
+    table: "${catalog}.mrs.feature_store"
+    keys: []          # declared by the producing stage
+  eval_pr:
+    table: "${catalog}.mrs.eval_pr"
+    keys: []          # declared by the producing stage
+outputs:
+  monitor_metrics:
+    table: "${catalog}.mrs.monitor_metrics"
+    keys: [monitor, metric, window_end]
+    required_columns: []   # fill from the stage spec
+    versioned: true
