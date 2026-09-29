@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI-DLC Harness Story</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --page:#FFFFFF; --slide:#FFFFFF; --ink:#0B1F44; --muted:#51607A; --title:#002677; --accent:#196ECF;
+  --lane:#EEF4FB; --lane-bd:#D8E4F3; --node:#FFFFFF; --node-bd:#C6D3E6;
+  --agent:#196ECF; --agent-fg:#FFFFFF; --git:#002677; --git-bd:#002677; --git-fg:#FFFFFF;
+  --skill-bg:#D9F6FA; --skill-bd:#3FB4CB; --skill-fg:#00566B;
+  --cmd-bg:#FFFFFF; --cmd-bd:#7F9BCB; --cmd-fg:#0B2E6B;
+  --human-bg:#FFF1E4; --human-bd:#E0701B; --human-fg:#7A3300;
+  --flow:#7D8CA5; --loop:#D9661A; --loop-fg:#A34400; --ok:#196ECF;
+  --data-bg:#002677; --data-fg:#FFFFFF; --data-k:#A8CBF6; --data-chip:rgba(255,255,255,.10); --data-chip-bd:rgba(255,255,255,.28);
+  --refresh-bg:#7FD8EA; --refresh-fg:#002677;
+  --band:#F2F6FC; --edge:#A7B9D3; --badge-bg:#002677; --badge-fg:#FFFFFF;
+  --add-bg:#E1EDFC; --add-bd:#7EA9E2; --add-fg:#0A3A86;
+  --done-bg:#196ECF; --done-fg:#FFFFFF; --rail:#E8EFF9;
+  --risk-bg:#FDF2EA; --risk-bd:#F1C4A5; --risk-fg:#8A3A0B; --risk-ic:#D9661A;
+  --shadow:0 1px 2px rgba(0,38,119,.06),0 6px 16px -8px rgba(0,38,119,.24);
+  --stage-shadow:0 10px 30px -18px rgba(15,23,42,.30);
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --cond:'IBM Plex Sans Condensed','IBM Plex Sans','Arial Narrow',Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,'Courier New',monospace;
+}
+/* ---------- page and deck chrome ---------- */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;justify-content:center;gap:12px;padding-block:14px;padding-inline:16px;-webkit-font-smoothing:antialiased}
+.wrap{overflow-x:auto;flex:none}
+.stage{position:relative;margin:0 auto;border:1px solid #E5E7EB;width:max(1100px,min(100%,calc((100vh - 92px) * 16 / 9)));aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--slide);box-shadow:var(--stage-shadow)}
+.stage:fullscreen{width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;box-shadow:none}
+.canvas{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+.slide{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:var(--slide)}
+.slide>*{position:absolute}
+.deckbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;flex:none}
+.deckbar button{font:500 13px/1 var(--sans);color:var(--ink);background:var(--node);border:1px solid var(--node-bd);border-radius:999px;padding:8px 13px;cursor:pointer}
+.deckbar button:hover{border-color:var(--accent)}
+.deckbar button[aria-current="true"]{background:var(--done-bg);border-color:var(--done-bg);color:var(--done-fg)}
+.deckbar button:disabled{opacity:.4;cursor:default}
+.deckbar .nav{font-weight:700;min-width:38px}
+.deckbar .count{font:600 12px/1 var(--mono);color:var(--muted);min-width:52px;text-align:center}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- shared slide header (same as Delivery Loop) ---------- */
+.eyebrow{left:48px;top:30px;font:700 13px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.title{left:48px;top:48px;margin:0;font:700 32px/1.2 var(--sans);letter-spacing:-.015em;color:var(--title);white-space:nowrap}
+.sub{left:48px;top:92px;margin:0;font:400 15.5px/1.3 var(--sans);color:var(--muted)}
+.legend{right:48px;top:34px;display:grid;grid-template-columns:repeat(3,auto);gap:12px 24px;font:500 13px/1 var(--sans);color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.sw{display:block;width:26px;height:14px;flex:none}
+.sw.agent{background:var(--agent);border-radius:4px}
+.sw.skill{background:var(--skill-bg);border:1.5px solid var(--skill-bd);border-radius:999px}
+.sw.cmd{background:var(--cmd-bg);border:1.5px solid var(--cmd-bd);border-radius:3px}
+.sw.git{background:var(--git);border-radius:3px}
+.sw.human{background:var(--human-bg);border:3px double var(--human-bd);border-radius:3px}
+.sw.loop{height:0;border-top:2px dashed var(--loop)}
+.sw.plat{background:var(--node);border:1.5px solid var(--node-bd);border-radius:4px}
+.sw.add{background:var(--add-bg);border:1.5px solid var(--add-bd);border-radius:4px}
+.sw.ip{border:1.5px dashed var(--accent);border-radius:4px}
+.sw.done{background:var(--done-bg);border-radius:4px}
+.sw.rd{border:1.5px solid var(--accent);border-radius:4px}
+.sw.wr{background:var(--done-bg);border-radius:4px}
+.st{display:inline-flex;align-items:center;font:600 11px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;padding:5px 9px;border-radius:999px;white-space:nowrap}
+.st.done{background:var(--done-bg);color:var(--done-fg)}
+.st.ip{border:1.5px dashed var(--accent);color:var(--accent)}
+.cap{margin:0;font:400 15px/1.4 var(--sans);color:var(--ink)}
+.cap b{font-weight:600;color:var(--title)}
+
+/* ---------- slide 1: harness layers ---------- */
+.rail{top:136px;width:170px;height:832px;border-radius:16px;background:var(--rail);border:1px solid var(--lane-bd);padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.rail h3{margin:0 0 2px;font:700 13px/1.2 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--title)}
+.rail p{margin:0;font:400 13px/1.4 var(--sans);color:var(--ink);padding-left:10px;border-left:2px solid var(--edge)}
+.rail code{font:600 12px/1 var(--mono)}
+.rail .vl{margin-top:auto;align-self:center;writing-mode:vertical-rl;transform:rotate(180deg);font:700 11.5px/1 var(--cond);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.layer{left:224px;width:1440px;height:112px;border-radius:14px;background:var(--lane);border:1px solid var(--lane-bd);display:flex;align-items:center;gap:22px;padding:0 18px}
+.lh{width:290px;flex:none;display:flex;flex-direction:column;gap:6px}
+.lh .ln{display:flex;align-items:baseline;gap:10px}
+.lh i{font:700 22px/1 var(--mono);font-style:normal;color:var(--accent)}
+.lh b{font:700 15px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.lh>span{font:400 12.5px/1.35 var(--sans);color:var(--muted)}
+.cr{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.rk{width:88px;flex:none;font:600 10.5px/1.15 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.c{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border-radius:8px;font:500 13.5px/1 var(--sans);white-space:nowrap}
+.c code{font:600 12.5px/1 var(--mono)}
+.c.p{background:var(--node);border:1.5px solid var(--node-bd);color:var(--ink)}
+.c.a{background:var(--add-bg);border:1.5px solid var(--add-bd);color:var(--add-fg)}
+.c.ip{background:transparent;border-style:dashed;border-color:var(--accent)}
+.ov{left:0;top:0;overflow:visible;pointer-events:none}
+.lpp{fill:none;stroke:var(--loop);stroke-width:2;stroke-dasharray:6 5}
+.lpm{fill:var(--loop)}
+.lpl{writing-mode:vertical-rl;font:600 12px/1 var(--sans);color:var(--loop-fg);background:var(--slide);padding:8px 3px;border-radius:6px;white-space:nowrap}
+
+/* ---------- slide 2: how the pipeline was created ---------- */
+.start{left:40px;top:128px;width:1840px;height:62px;border-radius:14px;background:var(--data-bg);color:var(--data-fg);display:flex;align-items:center;gap:10px;padding:0 20px;box-shadow:var(--shadow)}
+.start .lbl{display:flex;flex-direction:column;gap:5px;width:236px;flex:none}
+.start .lbl small{font:700 11.5px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--data-k)}
+.start .lbl b{font:600 17px/1.1 var(--sans)}
+.sc{font:500 14px/1 var(--sans);padding:9px 14px;border-radius:999px;background:var(--data-chip);border:1px solid var(--data-chip-bd);white-space:nowrap}
+.sc.hi{background:var(--refresh-bg);border-color:var(--refresh-bg);color:var(--refresh-fg);font-weight:600}
+.sa{font:600 16px/1 var(--mono);color:var(--data-k)}
+.hl{left:252px;top:196px;width:334px;height:802px;border-radius:16px;background:var(--lane);border:1px solid var(--lane-bd)}
+.gh{top:206px;width:314px;height:84px;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.gh.done{background:var(--git);color:var(--git-fg);border:1.5px solid var(--git-bd);box-shadow:var(--shadow)}
+.gh.ip{background:var(--node);color:var(--ink);border:1.5px dashed var(--edge)}
+.gh .top{display:flex;align-items:center;gap:8px}
+.gh .num{font:700 13px/1 var(--mono);opacity:.75}
+.gh code{font:600 15px/1 var(--mono)}
+.gh small{font:400 13px/1.2 var(--sans);opacity:.85}
+.gh .st{margin-left:auto}
+.gh.done .st.done{background:var(--refresh-bg);color:var(--refresh-fg)}
+.rl{left:40px;width:206px;height:108px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.rl i{font:600 11px/1 var(--mono);font-style:normal;color:var(--accent)}
+.rl b{font:700 15px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.rl>span{font:400 12.5px/1.35 var(--sans);color:var(--muted)}
+.gc{width:314px;height:108px;border-radius:10px;background:var(--node);border:1.5px solid var(--node-bd);padding:9px 12px;display:flex;flex-wrap:wrap;align-content:center;align-items:center;gap:5px 6px;box-shadow:var(--shadow)}
+.gc.ip{border-style:dashed;box-shadow:none}
+.gc .t{width:100%;font:400 12.5px/1.3 var(--sans);color:var(--muted)}
+.gc .t.k{color:var(--ink)}
+.pl{display:inline-flex;align-items:center;gap:5px;height:25px;padding:0 9px;border-radius:6px;font:600 12px/1 var(--sans);white-space:nowrap}
+.pl code{font:600 11.5px/1 var(--mono)}
+.pl.sk{background:var(--skill-bg);color:var(--skill-fg);border:1.5px solid var(--skill-bd);border-radius:999px}
+.pl.cm{background:var(--cmd-bg);color:var(--cmd-fg);border:1.5px solid var(--cmd-bd);font:600 11.5px/1 var(--mono)}
+.pl.ag{background:var(--agent);color:var(--agent-fg)}
+.pl.ag2{background:var(--node);color:var(--accent);border:1.5px solid var(--accent)}
+.pl.gt{background:var(--git);color:var(--git-fg);border:1.5px solid var(--git-bd);font:600 11.5px/1 var(--mono)}
+.pl.hg{background:var(--human-bg);color:var(--human-fg);border:3px double var(--human-bd)}
+.pl.out{background:var(--band);color:var(--ink);border:1.5px solid var(--node-bd)}
+.mr{font:700 9px/1 var(--cond);letter-spacing:.06em;padding:2px 4px;border-radius:4px;background:var(--skill-fg);color:var(--skill-bg)}
+
+/* ---------- slide 4: agents and memory ---------- */
+.pn,.mem,.col{border-radius:16px;background:var(--lane);border:1px solid var(--lane-bd);padding:18px;display:flex;flex-direction:column;gap:12px}
+.ph{display:flex;align-items:center;gap:10px;min-height:22px}
+.ph b{font:700 15px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--title)}
+.ph .rt{margin-left:auto;font:600 13px/1 var(--mono);color:var(--muted)}
+.pd{margin:0;font:400 13.5px/1.45 var(--sans);color:var(--muted)}
+.pd code{font:600 12.5px/1 var(--mono);color:var(--ink)}
+.fl{flex:1;min-height:0;display:flex;align-items:stretch}
+.fb{border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;background:var(--node);border:1.5px solid var(--node-bd);box-shadow:var(--shadow);min-width:0}
+.fb .k{font:600 10.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.fb ul,.fb ol{margin:0;display:flex;flex-direction:column;gap:6px}
+.fb ul{padding:0;list-style:none}
+.fb ol{padding-left:18px}
+.fb li{font:400 12.5px/1.32 var(--sans);color:var(--ink)}
+.fb ul li{padding-left:11px;position:relative}
+.fb ul li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--edge)}
+.fb li code{font:600 11.5px/1 var(--mono)}
+.fb.ag{background:var(--agent);border-color:var(--agent);color:var(--agent-fg);justify-content:center}
+.fb.ag .k{color:var(--agent-fg);opacity:.75}
+.fb.ag b{font:600 16px/1.2 var(--sans)}
+.fb.ag small{font:400 12.5px/1.35 var(--sans);opacity:.92}
+.fb.hu{background:var(--human-bg);border:3px double var(--human-bd)}
+.fb.hu .k,.fb.hu li{color:var(--human-fg)}
+.fb.hu ul li::before{background:var(--human-bd)}
+.ar{flex:none;width:26px;display:flex;align-items:center;justify-content:center}
+.ar svg{width:20px;height:14px}
+.aw{fill:none;stroke:var(--flow);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.vd{display:flex;flex-direction:column;gap:7px}
+.vd span{font:600 12.5px/1.2 var(--sans);padding:7px 10px;border-radius:8px;white-space:nowrap}
+.vd .v-pass{border:1.5px solid var(--ok);color:var(--ok);background:var(--node)}
+.vd .v-fix{border:1.5px dashed var(--loop);color:var(--loop-fg)}
+.vd .v-block{background:var(--human-bg);border:1.5px solid var(--human-bd);color:var(--human-fg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.kk{font:600 10.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.ck{font:500 12.5px/1 var(--sans);padding:6px 10px;border-radius:999px;background:var(--node);border:1px solid var(--node-bd);color:var(--ink);white-space:nowrap}
+.ck code{font:600 11.5px/1 var(--mono)}
+.nt{margin:0;font:500 13px/1.4 var(--sans);padding:9px 12px;border-radius:10px}
+.nt code{font:600 12px/1 var(--mono)}
+.nt.hu{background:var(--human-bg);border:1.5px solid var(--human-bd);color:var(--human-fg)}
+.nt.lp{border:1.5px dashed var(--loop);color:var(--loop-fg);background:var(--slide)}
+.mt{flex:1;display:grid;grid-template-columns:230px 220px 1fr 150px 190px 190px 190px;grid-template-rows:auto repeat(4,1fr);border:1px solid var(--lane-bd);border-radius:12px;overflow:hidden;background:var(--node)}
+.mt>div{padding:9px 12px;border-top:1px solid var(--lane-bd);font:400 12.5px/1.38 var(--sans);color:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0}
+.mt>.hd{background:var(--band);font:600 10.5px/1.2 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-top:none}
+.mt code{font:600 11.5px/1 var(--mono)}
+.mt .ly{flex-direction:row;align-items:center;justify-content:flex-start;gap:10px}
+.mt .nb{width:28px;height:28px;border-radius:50%;background:var(--badge-bg);color:var(--badge-fg);display:grid;place-items:center;font:700 12px/1 var(--mono);flex:none}
+.mt .nb.ip{background:transparent;color:var(--accent);border:1.5px dashed var(--accent)}
+.mt .ly b{display:block;font:600 14px/1.25 var(--sans)}
+.mt .ly small{display:block;font:400 12px/1.3 var(--sans);color:var(--muted)}
+.rwb{display:flex;gap:4px}
+.rwb i{font:700 11px/1 var(--mono);font-style:normal;width:24px;height:20px;display:grid;place-items:center;border-radius:5px}
+.rwb .r{border:1.5px solid var(--accent);color:var(--accent)}
+.rwb .w{background:var(--done-bg);color:var(--done-fg)}
+.mt .agc small,.mt .no{font:400 12px/1.3 var(--sans);color:var(--muted)}
+
+/* ---------- slide 5: reuse and contribution ---------- */
+.col{top:132px;height:908px}
+.tree{background:var(--node);border:1px solid var(--node-bd);border-radius:10px;padding:6px 12px;display:flex;flex-direction:column}
+.tr{display:grid;grid-template-columns:282px 1fr auto;align-items:center;gap:10px;min-height:33px;border-bottom:1px solid var(--lane)}
+.tr:last-child{border-bottom:none}
+.tr .nm{font:500 13px/1.2 var(--mono);color:var(--ink);white-space:pre}
+.tr .nm .g{color:var(--edge)}
+.tr .ds{font:400 12.5px/1.25 var(--sans);color:var(--muted)}
+.tr .tg{display:flex;gap:4px;justify-content:flex-end}
+.tr.note{min-height:26px}
+.tr.note .nm{grid-column:1/-1;font:500 11.5px/1.3 var(--mono);color:var(--muted)}
+.tag{display:inline-block;font:700 9.5px/1 var(--cond);font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border-radius:4px;white-space:nowrap}
+.tag.gl{background:var(--add-bg);color:var(--add-fg);border:1px solid var(--add-bd)}
+.tag.mrk{background:var(--skill-bg);color:var(--skill-fg);border:1px solid var(--skill-bd)}
+.tag.lk{background:var(--human-bg);color:var(--human-fg);border:1px solid var(--human-bd)}
+.tag.me{color:var(--title);border:1px solid var(--title)}
+.skc{background:var(--node);border:1px solid var(--node-bd);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:11px}
+.skc.mrc{flex:1;border:1.5px solid var(--skill-bd)}
+.skc .hdr{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.skc .hdr b{font:700 13.5px/1.2 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--title)}
+.skc .hdr span{font:400 12.5px/1.2 var(--sans);color:var(--muted)}
+.grp{display:flex;flex-direction:column;gap:6px}
+.gk{font:600 10.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ps{display:flex;flex-wrap:wrap;gap:5px}
+.grp .t{font:400 12.5px/1.35 var(--sans);color:var(--muted)}
+.tl{flex:1;display:flex;flex-direction:column;justify-content:space-between;position:relative;padding-block:4px}
+.tl::before{content:"";position:absolute;left:15px;top:20px;bottom:20px;width:2px;background:var(--lane-bd)}
+.stp{display:grid;grid-template-columns:32px 1fr;gap:14px;position:relative}
+.stp .nb{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 var(--mono);background:var(--done-bg);color:var(--done-fg);position:relative;z-index:1}
+.stp.ip .nb{background:var(--slide);color:var(--accent);border:2px dashed var(--accent)}
+.stp .bd{display:flex;flex-direction:column;gap:6px;padding-top:4px}
+.stp .t1{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stp b{font:600 16px/1.25 var(--sans);color:var(--ink)}
+.stp p{margin:0;font:400 13.5px/1.45 var(--sans);color:var(--muted)}
+
+/* ---------- slide 6: impact trial ---------- */
+.ic{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.sw.risk{background:var(--risk-bg);border:1.5px solid var(--risk-bd);border-radius:4px}
+.sw.dash{height:0;border-top:2px dashed var(--accent)}
+.chd{top:204px;height:42px;border-radius:10px;display:flex;align-items:center;gap:10px;padding:0 14px;font:700 12.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase}
+.chd small{font:500 13px/1 var(--sans);letter-spacing:0;text-transform:none;opacity:.85}
+.chd.dh{color:var(--muted);padding-left:6px}
+.chd.wo{background:var(--risk-bg);border:1.5px solid var(--risk-bd);color:var(--risk-fg)}
+.chd.wo .ic{color:var(--risk-ic)}
+.chd.wi{background:var(--add-bg);border:1.5px solid var(--add-bd);color:var(--add-fg)}
+.chd.wi .ic{color:var(--accent)}
+.chd.me{border:1.5px dashed var(--edge);color:var(--muted);justify-content:space-between}
+.dm{left:40px;width:250px;height:100px;display:flex;align-items:center;gap:12px;padding:0 6px}
+.dm .ic{width:30px;height:30px;color:var(--accent)}
+.dm b{display:block;font:700 15.5px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.dm span{display:block;font:400 13px/1.3 var(--sans);color:var(--muted);margin-top:3px}
+.cx{height:100px;border-radius:10px;display:flex;align-items:center;gap:12px;padding:0 16px;font:400 14px/1.45 var(--sans);color:var(--ink)}
+.cx.wo{left:302px;width:520px;background:var(--risk-bg);border:1.5px solid var(--risk-bd)}
+.cx.wo .ic{color:var(--risk-ic)}
+.cx.wi{left:834px;width:560px;background:var(--add-bg);border:1.5px solid var(--add-bd)}
+.cx.wi .ic{color:var(--accent)}
+.ipt{border-bottom:1.5px dashed var(--accent)}
+.ms{left:1406px;width:474px;height:100px;border-radius:10px;border:1.5px dashed var(--edge);background:var(--node);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.ms b{font:600 14px/1.2 var(--sans);color:var(--ink)}
+.ms .sl{display:flex;gap:8px}
+.ms .v{display:inline-flex;align-items:center;gap:9px;height:28px;padding:0 11px;border-radius:8px;font:700 15px/1 var(--mono);color:var(--ink)}
+.ms .v i{font:700 10.5px/1 var(--cond);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ms .v.vb{border:1.5px dashed var(--risk-bd)}
+.ms .v.ad{border:1.5px dashed var(--accent)}
+.ms small{font:400 12.5px/1.3 var(--sans);color:var(--muted)}
+
+/* ---------- objective and impact slide ---------- */
+.o-obj{left:40px;top:128px;width:1840px;height:76px;border-radius:14px;background:var(--data-bg);color:var(--data-fg);display:flex;align-items:center;gap:12px;padding:0 22px;box-shadow:var(--shadow)}
+.o-obj .lbl{display:flex;flex-direction:column;gap:6px;flex:none}
+.o-obj .lbl small{font:700 11.5px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--data-k)}
+.o-obj .lbl b{font:700 21px/1.1 var(--sans)}
+.o-obj .sep{width:1px;height:40px;background:var(--data-chip-bd);margin:0 14px;flex:none}
+.o-obj .k{font:700 11.5px/1.2 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--data-k);margin-right:4px}
+.o-obj .dom{font:600 15px/1 var(--sans);padding:10px 16px;border-radius:999px;background:var(--refresh-bg);color:var(--refresh-fg);white-space:nowrap}
+.o-kpi{top:220px;width:355px;height:108px;border-radius:12px;background:var(--node);border:1px solid var(--node-bd);box-shadow:var(--shadow);padding:16px 18px;display:flex;flex-direction:column;justify-content:flex-start;gap:8px}
+.o-kpi b{font:700 44px/1 var(--sans);letter-spacing:-.02em;color:var(--title)}
+.o-kpi span{font:400 13.5px/1.35 var(--sans);color:var(--muted)}
+.o-kpi.pl{border:1.5px dashed var(--accent);box-shadow:none}
+.o-kpi.pl b{color:var(--accent)}
+.o-col{top:344px;width:602px;height:558px;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.o-col.gp{background:var(--risk-bg);border:1px solid var(--risk-bd)}
+.o-col.bl{background:var(--add-bg);border:1px solid var(--add-bd)}
+.o-col.ad{background:var(--lane);border:1px solid var(--lane-bd)}
+.o-ch{display:flex;align-items:center;gap:10px;font:700 14px/1 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--title)}
+.o-ch .ic{width:24px;height:24px;color:var(--accent)}
+.o-col.gp .o-ch{color:var(--risk-fg)}
+.o-col.gp .o-ch .ic{color:var(--risk-ic)}
+.o-card{background:var(--node);border:1px solid var(--node-bd);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.o-card b{font:600 16px/1.25 var(--sans);color:var(--ink)}
+.o-card p{margin:0;font:400 14px/1.45 var(--sans);color:var(--muted)}
+.o-pills{display:flex;flex-wrap:wrap;gap:6px}
+.o-tag{font:500 13px/1 var(--sans);padding:7px 11px;border-radius:999px;background:var(--band);border:1px solid var(--node-bd);color:var(--ink);white-space:nowrap}
+.o-sk{font:600 13px/1 var(--sans);padding:8px 13px;border-radius:999px;background:var(--skill-bg);border:1.5px solid var(--skill-bd);color:var(--skill-fg);white-space:nowrap}
+.o-ag{font:600 13px/1 var(--sans);padding:8px 13px;border-radius:8px;background:var(--agent);color:var(--agent-fg);white-space:nowrap}
+.o-path{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.o-path .b{font:600 13px/1 var(--sans);padding:8px 13px;border-radius:999px;background:var(--git);color:var(--git-fg);white-space:nowrap}
+.o-path .c{font:600 13px/1 var(--sans);padding:8px 13px;border-radius:999px;background:var(--refresh-bg);color:var(--refresh-fg);white-space:nowrap}
+.o-arr{display:inline-flex;align-items:center}
+.o-arr svg{width:20px;height:14px;fill:none;stroke:var(--flow);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+.o-chart{background:var(--node);border:1px solid var(--node-bd);border-radius:12px;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px}
+.o-chh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.o-chh b{font:600 15px/1.2 var(--sans);color:var(--ink)}
+.o-plot{position:relative;height:118px;margin-left:40px}
+.o-gl{position:absolute;left:0;right:0;height:0;border-top:1px solid var(--lane-bd)}
+.o-gl span{position:absolute;left:-40px;top:-8px;width:34px;text-align:right;font:500 11px/1 var(--mono);color:var(--muted)}
+.o-gl.tg{border-top:2px dashed var(--loop)}
+.o-gl.tg em{position:absolute;right:0;top:-18px;font:600 11.5px/1 var(--sans);font-style:normal;color:var(--loop-fg);background:var(--node);padding:0 4px}
+.o-bars{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);align-items:end;justify-items:center}
+.o-bar{width:88px;border-radius:6px 6px 0 0;background:var(--done-bg);position:relative}
+.o-bar.tgt{background:transparent;border:2px dashed var(--accent);border-bottom:none}
+.o-slot{margin-bottom:6px;font:700 13px/1 var(--mono);color:var(--muted);border:1.5px dashed var(--edge);border-radius:6px;padding:5px 8px;background:var(--node)}
+.o-ml{display:grid;grid-template-columns:repeat(3,1fr);justify-items:center;margin-left:40px;font:600 12.5px/1 var(--sans);color:var(--ink)}
+.o-ml span small{font:400 11.5px/1 var(--sans);color:var(--muted)}
+.o-item{background:var(--node);border:1px solid var(--node-bd);border-radius:12px;padding:9px 14px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 12px}
+.o-item b{font:600 14.5px/1.25 var(--sans);color:var(--ink)}
+.o-item span.d{grid-column:1;font:400 13px/1.3 var(--sans);color:var(--muted)}
+.o-item .st{grid-row:1 / span 2;grid-column:2}
+.o-next{left:40px;top:918px;width:1840px;height:112px;border-radius:16px;background:var(--band);border:1px solid var(--lane-bd);display:flex;align-items:center;gap:12px;padding:0 22px}
+.o-next .lbl{display:flex;flex-direction:column;gap:6px;width:176px;flex:none}
+.o-next .lbl small{font:700 11.5px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.o-next .lbl b{font:700 18px/1.15 var(--sans);color:var(--title)}
+.o-step{flex:1;min-width:0;height:72px;border-radius:12px;background:var(--node);border:1px solid var(--node-bd);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.o-step small{font:700 11px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.o-step b{font:600 14.5px/1.25 var(--sans);color:var(--ink)}
+.o-step.goal{background:var(--done-bg);border-color:var(--done-bg)}
+.o-step.goal small,.o-step.goal b{color:var(--done-fg)}
+
+.o-cg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.o-cc{height:60px;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.o-cc b{font:600 14.5px/1.2 var(--sans);white-space:nowrap}
+.o-cc small{font:400 12.5px/1.25 var(--sans);white-space:nowrap}
+.o-cc.sk{background:var(--skill-bg);border:1.5px solid var(--skill-bd);color:var(--skill-fg);border-radius:999px;padding-left:22px}
+.o-cc.ag{background:var(--agent);color:var(--agent-fg);box-shadow:var(--shadow)}
+.o-cc.ag small{opacity:.9}
+.o-bcol{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.o-bv{font:700 15px/1 var(--mono);color:var(--ink);margin-bottom:6px;white-space:nowrap}
+
+/* ---------- slide 3: Delivery Loop (ported unchanged, scoped) ---------- */
+#s3 .data{left:40px;top:124px;width:1840px;height:72px;border-radius:14px;background:var(--data-bg);color:var(--data-fg);display:flex;align-items:center;gap:10px;padding:0 20px;box-shadow:var(--shadow)}
+#s3 .data .lbl{display:flex;flex-direction:column;gap:4px;width:280px;flex:none}
+#s3 .data .lbl small{font:700 11.5px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--data-k)}
+#s3 .data .lbl b{font:600 18px/1.1 var(--sans)}
+#s3 .dchip{font:500 14.5px/1 var(--sans);padding:9px 14px;border-radius:999px;background:var(--data-chip);border:1px solid var(--data-chip-bd);white-space:nowrap}
+#s3 .data .grow{flex:1}
+#s3 .dchip.refresh{background:var(--refresh-bg);border-color:var(--refresh-bg);color:var(--refresh-fg);font-weight:600}
+#s3 .lane{left:40px;width:1840px;border-radius:16px;background:var(--lane);border:1px solid var(--lane-bd)}
+#s3 .ll{left:54px;width:136px;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+#s3 .ll i{font:700 24px/1 var(--mono);color:var(--accent)}
+#s3 .ll b{font:700 13px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+#s3 .ll span{font:400 12px/1.3 var(--sans);color:var(--muted)}
+#s3 .ll em{margin-top:4px;font:700 11px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:4px 8px}
+#s3 .n{height:70px;padding:8px 12px 8px 16px;display:flex;flex-direction:column;justify-content:center;gap:3px;box-shadow:var(--shadow);border-radius:10px}
+#s3 .n .k{font:600 10.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase}
+#s3 .n b{font:600 15px/1.15 var(--sans);white-space:nowrap}
+#s3 .n small{font:400 12.5px/1.2 var(--sans);white-space:nowrap}
+#s3 .n.cmd b{font:600 14px/1.15 var(--mono)}
+#s3 .n.agent{background:var(--agent);color:var(--agent-fg)}
+#s3 .n.git{background:var(--git);color:var(--git-fg);border:1.5px solid var(--git-bd);border-radius:6px}
+#s3 .n.skill{background:var(--skill-bg);color:var(--skill-fg);border:1.5px solid var(--skill-bd);border-radius:999px;padding-left:22px}
+#s3 .n.cmd{background:var(--cmd-bg);color:var(--cmd-fg);border:1.5px solid var(--cmd-bd);border-radius:6px}
+#s3 .n.cmd small{color:var(--muted)}
+#s3 .n.human{background:var(--human-bg);color:var(--human-fg);border:3px double var(--human-bd);border-radius:8px}
+#s3 .n.user,#s3 .n.exit{background:var(--node);color:var(--ink);border:1.5px solid var(--node-bd)}
+#s3 .n.user small,#s3 .n.exit .k{color:var(--muted)}
+#s3 .n.bf{background:var(--node);color:var(--ink);border:1.5px dashed var(--accent);box-shadow:none}
+#s3 .n.bf .k{color:var(--accent)}
+#s3 .n.bf small{color:var(--muted)}
+#s3 .n.exit .ln{font:500 12.5px/1.25 var(--sans);white-space:nowrap}
+#s3 .badge{position:absolute;left:-11px;top:-11px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--badge-bg);color:var(--badge-fg);font:700 11px/1 var(--mono);border:2px solid var(--slide)}
+#s3 .tpl{border-radius:10px;background:var(--node);border:1.5px solid var(--node-bd);box-shadow:var(--shadow)}
+#s3 .tpl-h{display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-bottom:1px solid var(--node-bd);background:var(--lane);border-radius:9px 9px 0 0;color:var(--muted)}
+#s3 .tpl-h svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5}
+#s3 .tpl-h code{font:600 12.5px/1 var(--mono);color:var(--ink)}
+#s3 .tpl-h em{margin-left:auto;font:600 10.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--agent-fg);background:var(--agent);padding:4px 8px;border-radius:999px}
+#s3 .tpl-b{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:7px 14px}
+#s3 .tpl-b pre{margin:0;font:500 12px/1.4 var(--mono);color:var(--ink);white-space:pre}
+#s3 .tpl .mk{color:var(--muted)}
+#s3 .tpl .key{color:var(--skill-fg)}
+#s3 .tpl .hd{color:var(--accent);font-weight:600}
+#s3 .chip{transform:translate(-50%,-50%);font:600 12.5px/1 var(--sans);padding:5px 11px;border-radius:999px;white-space:nowrap;background:var(--lane)}
+#s3 .chip.bad{border:1.5px dashed var(--loop);color:var(--loop-fg)}
+#s3 .chip.good{border:1.5px solid var(--ok);color:var(--ok)}
+#s3 .wires{left:0;top:0;overflow:visible;pointer-events:none}
+#s3 .f{fill:none;stroke:var(--flow);stroke-width:2}
+#s3 .l{fill:none;stroke:var(--loop);stroke-width:2;stroke-dasharray:6 5}
+#s3 .bw{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 5}
+#s3 .r{fill:none;stroke:var(--flow);stroke-width:2.2;stroke-dasharray:1 6;stroke-linecap:round}
+#s3 .g{fill:none;stroke:var(--edge);stroke-width:1.6}
+#s3 .mf{fill:var(--flow)}
+#s3 .ml{fill:var(--loop)}
+#s3 .mb{fill:var(--accent)}
+#s3 .band{left:40px;top:800px;width:1840px;height:256px;border-radius:16px;background:var(--band);border:1px solid var(--lane-bd)}
+#s3 .bt{display:flex;flex-direction:column;gap:5px}
+#s3 .bt b{font:700 13px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+#s3 .bt span{font:400 13px/1.3 var(--sans);color:var(--muted)}
+#s3 .br{top:866px;width:184px;height:80px;border-radius:10px;background:var(--node);border:1.5px solid var(--node-bd);box-shadow:var(--shadow);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+#s3 .br .k{display:flex;align-items:center;gap:5px;font:600 10.5px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+#s3 .br svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6}
+#s3 .br code{font:600 14px/1.1 var(--mono);color:var(--title)}
+#s3 .br small{font:400 12px/1.2 var(--sans);color:var(--muted);white-space:nowrap}
+#s3 .br.ml{background:var(--skill-bg);border-color:var(--skill-bd)}
+#s3 .br.ml small,#s3 .br.ml .k{color:var(--skill-fg)}
+#s3 .trig{left:64px;top:996px;display:flex;align-items:center;gap:10px}
+#s3 .trig .k{font:700 11.5px/1 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+#s3 .tc{font:500 13px/1 var(--sans);padding:8px 13px;border-radius:999px;background:var(--node);border:1px solid var(--node-bd);color:var(--ink);white-space:nowrap}
+#s3 .divider{left:1130px;top:820px;width:1px;height:216px;background:var(--lane-bd)}
+#s3 .gp{height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;font:600 12.5px/1 var(--sans);white-space:nowrap}
+#s3 .gp.d{background:var(--git);color:var(--git-fg)}
+#s3 .gp.s{background:var(--cmd-bg);color:var(--cmd-fg);border:1.5px solid var(--cmd-bd)}
+#s3 .gp.m{background:var(--agent);color:var(--agent-fg)}
+#s3 .gp.o{background:var(--node);color:var(--ink);border:1.5px solid var(--node-bd)}
+#s3 .gp.h{background:var(--human-bg);color:var(--human-fg);border:1.5px solid var(--human-bd)}
+#s3 .gp.dr{background:var(--skill-bg);color:var(--skill-fg);border:1.5px solid var(--skill-bd)}
+#s3 .cb{left:1150px;width:716px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#s3 .cbc{height:60px;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px;box-shadow:var(--shadow)}
+#s3 .cbc b{font:600 14px/1.2 var(--sans);white-space:nowrap}
+#s3 .cbc small{font:400 12px/1.25 var(--sans);white-space:nowrap}
+#s3 .cbc.sk{background:var(--skill-bg);border:1.5px solid var(--skill-bd);color:var(--skill-fg);border-radius:999px;padding-left:20px}
+#s3 .cbc.ag{background:var(--agent);color:var(--agent-fg)}
+#s3 .cbc.ag small{opacity:.9}
+#s3 .cbf{left:1150px;width:716px;display:flex;align-items:center;gap:8px}
+#s3 .cbp{height:30px;border-radius:999px;display:inline-flex;align-items:center;padding:0 13px;font:600 13px/1 var(--sans);white-space:nowrap}
+#s3 .cbp.a{background:var(--node);border:1.5px solid var(--node-bd);color:var(--ink)}
+#s3 .cbp.b{background:var(--git);border:1.5px solid var(--git-bd);color:var(--git-fg)}
+#s3 .cbp.c{background:var(--refresh-bg);color:var(--refresh-fg)}
+#s3 .cba{display:inline-flex;align-items:center}
+#s3 .cba svg{width:20px;height:14px;fill:none;stroke:var(--flow);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#s3 .hm{left:1150px;width:716px;height:176px;display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px}
+#s3 .hmc{display:flex;flex-direction:column;gap:6px;min-width:0}
+#s3 .hmk{font:700 11px/1 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+#s3 .hmr{height:30px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:8px;background:var(--node);border:1px solid var(--node-bd)}
+#s3 .hmr i{font:600 10.5px/1 var(--cond);font-style:normal;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 7px;flex:none}
+#s3 .hmr i.g{background:var(--skill-bg);color:var(--skill-fg);border:1px solid var(--skill-bd)}
+#s3 .hmr i.m{background:var(--cmd-bg);color:var(--cmd-fg);border:1px solid var(--cmd-bd)}
+#s3 .hmr i.s{background:var(--agent);color:var(--agent-fg)}
+#s3 .hmr i.h{background:var(--human-bg);color:var(--human-fg);border:1px solid var(--human-bd)}
+#s3 .hmr span{font:500 12.5px/1 var(--sans);color:var(--ink);white-space:nowrap}
+#s3 .hma{border-radius:10px;background:var(--agent);color:var(--agent-fg);padding:9px 12px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--shadow)}
+#s3 .hma b{font:600 13.5px/1.2 var(--sans)}
+#s3 .hma span{font:400 12px/1.3 var(--sans);opacity:.92}
+#s3 .hmm{height:30px;display:flex;align-items:center;gap:7px;padding:0 10px;border-radius:8px;background:var(--node);border:1px solid var(--node-bd)}
+#s3 .hmm i{width:20px;height:20px;border-radius:50%;background:var(--git);color:var(--git-fg);display:grid;place-items:center;font:700 11px/1 var(--mono);font-style:normal;flex:none}
+#s3 .hmm b{font:600 12.5px/1 var(--sans);color:var(--ink)}
+#s3 .hmm span{font:400 12px/1 var(--sans);color:var(--muted);white-space:nowrap}
+</style>
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap"><div class="stage" id="stage"><div class="canvas" id="canvas">
+
+<section class="slide" id="s7" aria-label="Taking AI-DLC to 60% adoption across data-driven domains">
+  <div class="eyebrow">AI-DLC on Databricks · Objective and impact so far</div>
+  <h1 class="title">Taking AI-DLC to 60% adoption across data-driven domains</h1>
+  <p class="sub">Generic AI-DLC kits don't fit data work. I adapted them for data science, brought them to Databricks, and I'm taking them to data analysis, data engineering and data science teams.</p>
+  <div class="legend" style="grid-template-columns:repeat(2,auto)">
+    <span><i class="sw skill"></i>Skill</span>
+    <span><i class="sw agent"></i>Agent</span>
+    <span><i class="sw done"></i>Done</span>
+    <span><i class="sw ip"></i>Planned or ongoing</span>
+  </div>
+
+  <div class="o-obj">
+    <div class="lbl"><small>Objective</small><b>60% AI-DLC adoption by end of 2026</b></div>
+    <span class="sep"></span>
+    <span class="k">AI-DLC in<br>data-driven domains</span>
+    <span class="dom">Data analysis</span>
+    <span class="dom">Data engineering</span>
+    <span class="dom">Data science</span>
+  </div>
+
+  <div class="o-kpi" style="left:40px"><b>6</b><span>sessions delivered: 3 knowledge sharing, 3 Pixel training</span></div>
+  <div class="o-kpi pl" style="left:411px"><b>2</b><span>AIDLC O&amp;E coach sessions planned for Oct 1–2</span></div>
+  <div class="o-kpi" style="left:782px"><b>4</b><span>data science skill packs, shared in the AI Shark repo</span></div>
+  <div class="o-kpi" style="left:1153px"><b>2</b><span>agents: AI Ops and code reviewer</span></div>
+  <div class="o-kpi" style="left:1525px"><b>4,000+</b><span>people enabled on AIDLC through AI Sharkathons</span></div>
+
+  <div class="o-col gp" style="left:40px">
+    <div class="o-ch"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg>The gap</div>
+    <div class="o-card"><b>Generic kits don't fit data work</b><p>Spec Kit and similar kits are built for app development. Data science adds steps they don't cover:</p>
+      <div class="o-pills"><span class="o-tag">Data profiling</span><span class="o-tag">Leakage checks</span><span class="o-tag">Feature selection</span><span class="o-tag">Model evaluation</span><span class="o-tag">Drift monitoring</span></div></div>
+    <div class="o-card"><b>No spec-driven tool on Databricks</b><p>Databricks, where our data teams build, had no spec-driven development tool.</p></div>
+    <div class="o-card"><b>Teams need to see it work</b><p>Adoption needs proof on real work, not toy examples, so the member risk build is the live demo.</p></div>
+  </div>
+
+  <div class="o-col bl" style="left:659px">
+    <div class="o-ch"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg>Contribution: skills and agents</div>
+    <div class="o-path"><span class="b">Shared: AI Shark repo</span><span class="o-arr"><svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 7H18M13 2L18 7L13 12"/></svg></span><span class="c">Integrated: UHC catalog skills repo</span></div>
+    <div class="o-cg">
+      <div class="o-cc sk"><b>Token economics skills</b><small>Token budgets and lean prompts</small></div>
+      <div class="o-cc sk"><b>Context management skills</b><small>Right context, loaded on demand</small></div>
+      <div class="o-cc sk"><b>Feature selection skills</b><small>Ablation, SHAP, leakage checks</small></div>
+      <div class="o-cc sk"><b>Guardrails skills</b><small>PHI, security, leakage checks</small></div>
+      <div class="o-cc ag"><b>AI Ops agents</b><small>Drift triage, CRs, reruns</small></div>
+      <div class="o-cc ag"><b>Code reviewer agent</b><small>Pass, fix or block on every PR</small></div>
+    </div>
+    <div class="o-card"><b>Spec Kit on Databricks</b><p>Spec-driven development running inside Databricks, on our model endpoints and under Unity Catalog governance.</p></div>
+  </div>
+
+  <div class="o-col ad" style="left:1278px">
+    <div class="o-ch"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c2.3.2 4.1 1.8 4.6 4.8"/></svg>Driving adoption</div>
+    <div class="o-chart">
+      <div class="o-chh"><b>Teams adopting AI-DLC, Ramesh's org</b><span class="st done">+3 teams in Sept</span></div>
+      <div class="o-plot">
+        <div class="o-gl" style="bottom:0"><span>0</span></div>
+        <div class="o-gl" style="bottom:25%"><span>1</span></div>
+        <div class="o-gl" style="bottom:50%"><span>2</span></div>
+        <div class="o-gl" style="bottom:75%"><span>3</span></div>
+        <div class="o-gl" style="bottom:100%"><span>4</span></div>
+        <div class="o-bars" style="grid-template-columns:repeat(2,1fr)">
+          <div class="o-bcol"><div class="o-bv">0</div><div class="o-bar" style="height:0;width:120px"></div></div>
+          <div class="o-bcol"><div class="o-bv">3 teams</div><div class="o-bar" style="height:75%;width:120px"></div></div>
+        </div>
+      </div>
+      <div class="o-ml" style="grid-template-columns:repeat(2,1fr)"><span>Aug</span><span>Sept</span></div>
+    </div>
+    <div class="o-item"><b>Biweekly knowledge sharing, Ramesh's org</b><span class="d">3 sessions demoing the member risk work</span><span class="st done">Done</span></div>
+    <div class="o-item"><b>Pixel mandatory training coach</b><span class="d">3 sessions at Kalyani Magnum, Bangalore</span><span class="st done">Done</span></div>
+    <div class="o-item"><b>AIDLC O&amp;E coach</b><span class="d">Sessions on Oct 1 and Oct 2</span><span class="st ip">Planned</span></div>
+    <div class="o-item"><b>Sharkathon</b><span class="d">Collaborating with the AI Shark team</span><span class="st ip">Ongoing</span></div>
+  </div>
+
+  <div class="o-next">
+    <div class="lbl"><small>Next 90 days</small><b>Path to 60%</b></div>
+    <div class="o-step"><small>Oct 1–2</small><b>AIDLC O&amp;E coach sessions</b></div>
+    <span class="o-arr"><svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 7H18M13 2L18 7L13 12"/></svg></span>
+    <div class="o-step"><small>Every two weeks</small><b>Knowledge sharing in Ramesh's org</b></div>
+    <span class="o-arr"><svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 7H18M13 2L18 7L13 12"/></svg></span>
+    <div class="o-step"><small>Next</small><b>Feature creation trial: vibe coding vs AI-DLC</b></div>
+    <span class="o-arr"><svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 7H18M13 2L18 7L13 12"/></svg></span>
+    <div class="o-step goal"><small>Dec 2026</small><b>60% AI-DLC adoption in data-driven domains</b></div>
+  </div>
+</section>
+
+<section class="slide" id="s2" aria-label="Each pipeline stage is built through the same harness" hidden>
+  <div class="eyebrow">AI-DLC on Databricks · How the current pipeline was created</div>
+  <h1 class="title">Each pipeline stage is built through the same harness</h1>
+  <p class="sub">Feature creation is done end to end with Spec Kit. Selection, training, inference and MLOps follow the same path and are in progress.</p>
+  <div class="legend">
+    <span><i class="sw agent"></i>Agent</span>
+    <span><i class="sw skill"></i>Skill</span>
+    <span><i class="sw cmd"></i>Spec Kit command</span>
+    <span><i class="sw git"></i>Git</span>
+    <span><i class="sw human"></i>Human gate</span>
+    <span><i class="sw ip"></i>In progress</span>
+  </div>
+
+  <div class="start">
+    <div class="lbl"><small>Starting point</small><b>v1 scripts, written by hand</b></div>
+    <span class="sc">Scripts for all five stages</span><span class="sa">→</span>
+    <span class="sc">Brownfield entry: specs drafted from the existing code</span><span class="sa">→</span>
+    <span class="sc">Spec approved and locked</span><span class="sa">→</span>
+    <span class="sc hi">Stage rebuilt through the harness, one branch at a time</span>
+  </div>
+
+  <div class="hl"></div>
+
+  <div class="gh done" style="left:262px"><div class="top"><span class="num">01</span><code>feature-creation</code><span class="st done">Done</span></div><small>Features into Unity Catalog tables</small></div>
+  <div class="gh ip" style="left:588px"><div class="top"><span class="num">02</span><code>feature-selection</code><span class="st ip">In progress</span></div><small>Selected feature set</small></div>
+  <div class="gh ip" style="left:914px"><div class="top"><span class="num">03</span><code>model-training</code><span class="st ip">In progress</span></div><small>MLflow model and metrics</small></div>
+  <div class="gh ip" style="left:1240px"><div class="top"><span class="num">04</span><code>model-inference</code><span class="st ip">In progress</span></div><small>Member risk scores</small></div>
+  <div class="gh ip" style="left:1566px"><div class="top"><span class="num">05</span><code>mlops</code><span class="st ip">In progress</span></div><small>Drift monitors and reruns</small></div>
+
+  <!-- row: spec -->
+  <div class="rl" style="top:302px"><i>Memory</i><b>Spec</b><span>Written and locked in Git before any code</span></div>
+  <div class="gc" style="left:262px;top:302px"><span class="pl gt">specs/001-feature-creation</span><span class="t">spec · plan · tasks · constitution</span></div>
+  <div class="gc ip" style="left:588px;top:302px"><span class="pl gt">specs/002-feature-selection</span><span class="t">spec · plan · tasks</span></div>
+  <div class="gc ip" style="left:914px;top:302px"><span class="pl gt">specs/003-model-training</span><span class="t">spec · plan · tasks</span></div>
+  <div class="gc ip" style="left:1240px;top:302px"><span class="pl gt">specs/004-model-inference</span><span class="t">spec · plan · tasks</span></div>
+  <div class="gc ip" style="left:1566px;top:302px"><span class="pl gt">specs/005-mlops</span><span class="t">spec · plan · tasks</span></div>
+
+  <!-- row: skills -->
+  <div class="rl" style="top:418px"><i>Guides</i><b>Skills</b><span>Loaded on demand. <span class="mr">MR</span> marks a member-risk skill.</span></div>
+  <div class="gc" style="left:262px;top:418px"><span class="pl sk">@Feature-Creation</span><span class="pl sk">@Tech-Requirement</span><span class="pl sk"><span class="mr">MR</span>claims-data-rules</span><span class="pl sk"><span class="mr">MR</span>hcc-v28-mapping</span></div>
+  <div class="gc ip" style="left:588px;top:418px"><span class="pl sk">@Tech-Requirement</span><span class="pl sk">model-evaluation</span><span class="pl sk">leakage-checks</span></div>
+  <div class="gc ip" style="left:914px;top:418px"><span class="pl sk">mlflow-tracking</span><span class="pl sk">model-evaluation</span><span class="pl sk"><span class="mr">MR</span>cms-risk-comparison</span></div>
+  <div class="gc ip" style="left:1240px;top:418px"><span class="pl sk">mlflow-tracking</span><span class="pl sk">deployment</span></div>
+  <div class="gc ip" style="left:1566px;top:418px"><span class="pl sk">@MLOps</span><span class="pl sk">drift-triage</span></div>
+
+  <!-- row: agent -->
+  <div class="rl" style="top:534px"><i>Agents</i><b>Agent</b><span>Builds task by task on the stage branch</span></div>
+  <div class="gc" style="left:262px;top:534px"><span class="pl ag">Claude Code + Spec Kit</span><span class="pl cm">specify → plan → tasks → implement</span></div>
+  <div class="gc ip" style="left:588px;top:534px"><span class="pl ag">Claude Code + Spec Kit</span><span class="pl ag2">Leakage auditor sub-agent</span></div>
+  <div class="gc ip" style="left:914px;top:534px"><span class="pl ag">Claude Code + Spec Kit</span><span class="pl ag2">CMS evaluator sub-agent</span></div>
+  <div class="gc ip" style="left:1240px;top:534px"><span class="pl ag">Claude Code + Spec Kit</span><span class="pl cm">implement → CI deploy</span></div>
+  <div class="gc ip" style="left:1566px;top:534px"><span class="pl ag">AI Ops agent</span><span class="t">LangGraph on Databricks Apps, memory in Lakebase</span></div>
+
+  <!-- row: checks -->
+  <div class="rl" style="top:650px"><i>Sensors</i><b>Checks</b><span>The code review agent joins every PR when ready</span></div>
+  <div class="gc" style="left:262px;top:650px"><span class="t k">Golden test on 10 members</span><span class="t k">Leakage tests per feature table</span><span class="pl cm">/speckit.analyze</span></div>
+  <div class="gc ip" style="left:588px;top:650px"><span class="t k">Shuffle and leakage audit</span><span class="t k">Benchmark against the full feature set</span></div>
+  <div class="gc ip" style="left:914px;top:650px"><span class="t k">Compared with CMS-HCC on the test year</span><span class="t k">Calibration by decile, bootstrap CI</span></div>
+  <div class="gc ip" style="left:1240px;top:650px"><span class="t k">Contract tests on inputs and outputs</span><span class="t k">CI deploy to dev and test</span></div>
+  <div class="gc ip" style="left:1566px;top:650px"><span class="t k">PSI above 0.2 on features</span><span class="t k">Predicted ÷ actual outside 0.95–1.05 by condition group</span></div>
+
+  <!-- row: gate -->
+  <div class="rl" style="top:766px"><i>Human gate</i><b>Gate</b><span>Named approver. A code owner signs every PR.</span></div>
+  <div class="gc" style="left:262px;top:766px"><span class="pl hg">Data Gate · data engineering lead</span><span class="pl hg">Target Gate · actuary</span></div>
+  <div class="gc ip" style="left:588px;top:766px"><span class="pl hg">Feature Gate · ML lead</span><span class="t">A feature stays only if its gain meets the spec rule</span></div>
+  <div class="gc ip" style="left:914px;top:766px"><span class="pl hg">Model Gate · actuary + ML lead</span><span class="t">Evidence: metrics against CMS, bootstrap CI</span></div>
+  <div class="gc ip" style="left:1240px;top:766px"><span class="pl hg">Deploy approval · platform owner</span><span class="t">MLflow deployment job, then batch scoring</span></div>
+  <div class="gc ip" style="left:1566px;top:766px"><span class="pl hg">Change request · ML lead + actuary</span><span class="t">The change re-enters the delivery loop at step 7</span></div>
+
+  <!-- row: output -->
+  <div class="rl" style="top:882px"><i>Foundation</i><b>Output</b><span>Lands in Unity Catalog or MLflow</span></div>
+  <div class="gc" style="left:262px;top:882px"><span class="pl out">Feature tables in Unity Catalog</span><span class="t">claims · Rx · RAF · HCC · SDOH · embeddings</span></div>
+  <div class="gc ip" style="left:588px;top:882px"><span class="pl out">Selected feature set</span><span class="t">Versioned, with a benchmark report</span></div>
+  <div class="gc ip" style="left:914px;top:882px"><span class="pl out">MLflow model and metrics</span><span class="t">Horizons 0+12 · 2+10 · 5+7 · 8+4</span></div>
+  <div class="gc ip" style="left:1240px;top:882px"><span class="pl out">Member risk scores</span><span class="t">Batch scores at each cutoff</span></div>
+  <div class="gc ip" style="left:1566px;top:882px"><span class="pl out">Drift monitors and change requests</span><span class="t">A retrained challenger after approval</span></div>
+
+  <p class="cap" style="left:40px;top:1008px;width:1840px">Same path for every stage: one branch, a locked spec, an agent build, checks, a code-owner PR approval, then the stage gate. <b>A change reruns only from the earliest stage it touches.</b></p>
+</section>
+
+<section class="slide" id="s3" aria-label="Every ML change ships through one governed, agent-assisted loop" hidden>
+
+
+  <div class="eyebrow">AI-DLC on Databricks · Greenfield and brownfield</div>
+  <h1 class="title">Every ML change ships through one governed, agent-assisted loop</h1>
+  <p class="sub">Agents do the work, humans own the gates, and the spec stays the source of truth from data to production.</p>
+  <div class="legend">
+    <span><i class="sw agent"></i>Agent</span>
+    <span><i class="sw skill"></i>Skill</span>
+    <span><i class="sw cmd"></i>Spec Kit command</span>
+    <span><i class="sw git"></i>Git action</span>
+    <span><i class="sw human"></i>Human gate</span>
+    <span><i class="sw loop"></i>Reject / rerun loop</span>
+  </div>
+
+  <div class="data">
+    <div class="lbl"><small>Data layer</small><b>Databricks · Unity Catalog</b></div>
+    <span class="dchip">Claims table</span>
+    <span class="dchip">Member table</span>
+    <span class="dchip">MMR / MOR</span>
+    <span class="dchip">SDOH</span>
+    <span class="dchip">Google PDFM embeddings</span>
+    <span class="dchip">Esri geospatial</span>
+    <span class="dchip">+ more</span>
+    <span class="grow"></span>
+    <span class="dchip refresh">Scheduled refresh triggers reruns</span>
+  </div>
+
+  <div class="lane" style="top:208px;height:196px"></div>
+  <div class="lane" style="top:414px;height:118px"></div>
+  <div class="lane" style="top:542px;height:118px"></div>
+  <div class="lane" style="top:670px;height:118px"></div>
+  <div class="band"></div>
+  <div class="divider"></div>
+
+  <svg class="wires" width="1920" height="1080" viewBox="0 0 1920 1080" aria-hidden="true">
+    <defs>
+      <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path class="mf" d="M0,0 L10,5 L0,10 z"/></marker>
+      <marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path class="ml" d="M0,0 L10,5 L0,10 z"/></marker>
+      <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path class="mb" d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+    <path class="f" marker-end="url(#af)" d="M368 306 H399"/>
+    <path class="f" marker-end="url(#af)" d="M600 306 H631"/>
+    <path class="f" marker-end="url(#af)" d="M842 306 H873"/>
+    <path class="f" marker-end="url(#af)" d="M1364 306 H1395"/>
+    <path class="f" marker-end="url(#af)" d="M1491 341 V409 H1700 V427"/>
+    <path class="bw" marker-end="url(#ab)" d="M1800 341 V427"/>
+
+    <path class="f" marker-end="url(#af)" d="M1652 463 H1621"/>
+    <path class="f" marker-end="url(#af)" d="M1410 463 H1379"/>
+    <path class="f" marker-end="url(#af)" d="M1168 463 H1137"/>
+    <path class="f" marker-end="url(#af)" d="M926 463 H895"/>
+    <path class="f" marker-end="url(#af)" d="M684 463 H653"/>
+    <path class="f" marker-end="url(#af)" d="M442 463 H411"/>
+    <path class="l" marker-end="url(#al)" d="M370 498 V516 H1273 V500"/>
+    <path class="f" marker-end="url(#af)" d="M280 498 V555"/>
+
+    <path class="f" marker-end="url(#af)" d="M451 591 H482"/>
+    <path class="f" marker-end="url(#af)" d="M734 591 H765"/>
+    <path class="f" marker-end="url(#af)" d="M1017 591 H1048"/>
+    <path class="f" marker-end="url(#af)" d="M1300 591 H1331"/>
+    <path class="f" marker-end="url(#af)" d="M1583 591 H1614"/>
+    <path class="l" marker-end="url(#al)" d="M891 626 V644 H330 V628"/>
+    <path class="f" marker-end="url(#af)" d="M1740 626 V683"/>
+
+    <path class="f" marker-end="url(#af)" d="M1560 719 H1529"/>
+    <path class="f" marker-end="url(#af)" d="M1220 719 H1189"/>
+    <path class="f" marker-end="url(#af)" d="M880 719 H849"/>
+    <path class="f" marker-end="url(#af)" d="M540 719 H509"/>
+    <path class="r" marker-end="url(#af)" d="M230 754 V776 H22 V326 H207"/>
+
+    <path class="f" marker-end="url(#af)" d="M248 906 H277"/>
+    <path class="f" marker-end="url(#af)" d="M462 906 H491"/>
+    <path class="f" marker-end="url(#af)" d="M676 906 H705"/>
+    <path class="f" marker-end="url(#af)" d="M890 906 H919"/>
+    <path class="l" marker-end="url(#al)" d="M1012 946 V970 H156 V947"/>
+  </svg>
+
+  <div class="ll" style="top:222px"><i>01</i><b>Capture intent</b><em>Greenfield entry</em></div>
+  <div class="ll" style="top:428px"><i>02</i><b>Specify &amp; plan</b><span>Spec is locked before any code</span></div>
+  <div class="ll" style="top:556px"><i>03</i><b>Build &amp; verify</b><span>Code must match the spec</span></div>
+  <div class="ll" style="top:684px"><i>04</i><b>Review &amp; release</b><span>Agents review, humans approve</span></div>
+
+  <div class="n user" style="left:208px;top:271px;width:160px"><i class="badge">1</i><span class="k">User</span><b>Data scientist</b><small>starts a feature</small></div>
+  <div class="n skill" style="left:400px;top:271px;width:200px"><i class="badge">2</i><span class="k">Skill</span><b>@Feature-Creation</b><small>skill loaded</small></div>
+  <div class="n agent" style="left:632px;top:271px;width:210px"><i class="badge">3</i><span class="k">Agent</span><b>Agent asks questions</b><small>guided Q&amp;A with the user</small></div>
+  <div class="tpl" style="left:874px;top:216px;width:490px;height:180px">
+    <i class="badge">4</i>
+    <div class="tpl-h"><svg viewBox="0 0 16 16"><path d="M4 1.5h5l3.5 3.5v9.5h-8.5z"/><path d="M9 1.5v3.5h3.5"/></svg><code>feature_creation_developer.md</code><em>Filled by agent</em></div>
+    <div class="tpl-b">
+<pre><span class="mk">---</span>
+<span class="key">name:</span> member_risk_feats
+<span class="key">domain:</span> member-risk
+<span class="key">version:</span> 0.1.0
+<span class="key">code_owner:</span> @owner
+<span class="key">code_reviewer:</span> @tech-lead
+<span class="key">status:</span> draft → locked
+<span class="mk">---</span></pre>
+<pre><span class="hd">## Objective</span>
+  business question answered
+<span class="hd">## Input → output schema</span>
+  UC tables → feature table
+<span class="hd">## Constraints</span>
+  PHI rules · SLA · cost
+<span class="hd">## Acceptance criteria</span>
+  tests · DQ · thresholds</pre>
+    </div>
+  </div>
+  <div class="n git" style="left:1396px;top:271px;width:190px"><i class="badge">5</i><span class="k">Git</span><b>Feature branch</b><small>created on GitHub</small></div>
+  <div class="n bf" style="left:1618px;top:271px;width:250px"><span class="k">Brownfield entry</span><b>Existing code</b><small>agent reverse-engineers specs</small></div>
+
+  <div class="n cmd" style="left:1652px;top:428px;width:210px"><i class="badge">6</i><span class="k">Spec Kit</span><b>specify init</b><small>scaffold + constitution</small></div>
+  <div class="n cmd" style="left:1410px;top:428px;width:210px"><i class="badge">7</i><span class="k">Spec Kit</span><b>/speckit.specify</b><small>writes spec.md</small></div>
+  <div class="n agent" style="left:1168px;top:428px;width:210px"><i class="badge">8</i><span class="k">Agent</span><b>Architecture diagram</b><small>agent asks, human provides</small></div>
+  <div class="n skill" style="left:926px;top:428px;width:210px"><i class="badge">9</i><span class="k">Skill</span><b>@Tech-Requirement</b><small>skill loaded</small></div>
+  <div class="n cmd" style="left:684px;top:428px;width:210px"><i class="badge">10</i><span class="k">Spec Kit</span><b>/speckit.plan</b><small>writes plan.md</small></div>
+  <div class="n cmd" style="left:442px;top:428px;width:210px"><i class="badge">11</i><span class="k">Spec Kit</span><b>/speckit.tasks</b><small>writes tasks.md</small></div>
+  <div class="n human" style="left:200px;top:428px;width:210px"><i class="badge">12</i><span class="k">Human gate</span><b>Approve &amp; lock spec</b><small>tech lead signs off</small></div>
+
+  <div class="n cmd" style="left:200px;top:556px;width:251px"><i class="badge">13</i><span class="k">Spec Kit</span><b>/speckit.implement</b><small>task by task</small></div>
+  <div class="n cmd" style="left:483px;top:556px;width:251px"><i class="badge">14</i><span class="k">Spec Kit</span><b>/speckit.clarify</b><small>resolves open questions</small></div>
+  <div class="n agent" style="left:766px;top:556px;width:251px"><i class="badge">15</i><span class="k">Agent</span><b>Spec-conformance agent</b><small>code = exact replica of spec?</small></div>
+  <div class="n cmd" style="left:1049px;top:556px;width:251px"><i class="badge">16</i><span class="k">Spec Kit</span><b>/speckit.analyze</b><small>cross-checks spec · plan · code</small></div>
+  <div class="n git" style="left:1332px;top:556px;width:251px"><i class="badge">17</i><span class="k">Agent · Git</span><b>Agent commits</b><small>linked to spec + tasks</small></div>
+  <div class="n git" style="left:1615px;top:556px;width:251px"><i class="badge">18</i><span class="k">Git</span><b>Pull request raised</b><small>spec attached for review</small></div>
+
+  <div class="n agent" style="left:1560px;top:684px;width:308px"><i class="badge">19</i><span class="k">Agent</span><b>Code review agent</b><small>quality · standards · test coverage</small></div>
+  <div class="n agent" style="left:1220px;top:684px;width:308px"><i class="badge">20</i><span class="k">Agent</span><b>Guardrail agent</b><small>security · vulnerabilities · PHI</small></div>
+  <div class="n human" style="left:880px;top:684px;width:308px"><i class="badge">21</i><span class="k">Human gate</span><b>Human review</b><small>code owner approves the PR</small></div>
+  <div class="n git" style="left:540px;top:684px;width:308px"><i class="badge">22</i><span class="k">Git</span><b>Merge to main</b><small>release-ready, fully traced</small></div>
+  <div class="n exit" style="left:200px;top:684px;width:308px"><span class="k">Then</span><span class="ln">Logic change: same branch, rerun step 7</span><span class="ln">New feature: new branch, back to step 1</span></div>
+
+  <span class="chip good" style="left:280px;top:520px">Approved</span>
+  <span class="chip bad" style="left:822px;top:516px">Rejected → human feedback or new architecture → agent rewrites</span>
+  <span class="chip bad" style="left:610px;top:644px">Code ≠ spec → back to implement</span>
+
+  <div class="bt" style="left:64px;top:816px;width:1040px"><b>One branch per ML stage</b><span>Each branch runs steps 1–22 and produces its own results and code.</span></div>
+  <div class="br" style="left:64px"><span class="k"><svg viewBox="0 0 16 16"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="5" r="1.8"/><path d="M4 4.8v6.4M12 6.8c0 3.2-8 2.4-8 4.4"/></svg>Branch</span><code>feature-creation</code><small>features → UC tables</small></div>
+  <div class="br" style="left:278px"><span class="k"><svg viewBox="0 0 16 16"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="5" r="1.8"/><path d="M4 4.8v6.4M12 6.8c0 3.2-8 2.4-8 4.4"/></svg>Branch</span><code>feature-selection</code><small>selected feature set</small></div>
+  <div class="br" style="left:492px"><span class="k"><svg viewBox="0 0 16 16"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="5" r="1.8"/><path d="M4 4.8v6.4M12 6.8c0 3.2-8 2.4-8 4.4"/></svg>Branch</span><code>model-training</code><small>MLflow model + metrics</small></div>
+  <div class="br" style="left:706px"><span class="k"><svg viewBox="0 0 16 16"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="5" r="1.8"/><path d="M4 4.8v6.4M12 6.8c0 3.2-8 2.4-8 4.4"/></svg>Branch</span><code>model-inference</code><small>member risk scores</small></div>
+  <div class="br ml" style="left:920px"><span class="k"><svg viewBox="0 0 16 16"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="5" r="1.8"/><path d="M4 4.8v6.4M12 6.8c0 3.2-8 2.4-8 4.4"/></svg>Branch</span><code>mlops</code><small>@MLOps skill: drift</small></div>
+  <span class="chip bad" style="left:584px;top:970px;background:var(--band)">Rerun on trigger · same loop, same gates</span>
+  <div class="trig"><span class="k">Rerun triggers</span><span class="tc">Scheduled data refresh</span><span class="tc">@MLOps skill: concept or model drift</span><span class="tc">Feature logic change</span></div>
+
+  <div class="bt" style="left:1150px;top:816px;width:716px"><b>Harness, agents and memory</b><span>What runs around every step above.</span></div>
+  <div class="hm" style="top:864px">
+    <div class="hmc">
+      <span class="hmk">Harness</span>
+      <div class="hmr"><i class="g">Guides</i><span>rules · skills · spec templates</span></div>
+      <div class="hmr"><i class="m">Models</i><span>Claude builds · GPT reviews</span></div>
+      <div class="hmr"><i class="s">Sensors</i><span>review · guardrails · tests</span></div>
+      <div class="hmr"><i class="h">Gates</i><span>people sign every gate</span></div>
+    </div>
+    <div class="hmc">
+      <span class="hmk">Agents</span>
+      <div class="hma"><b>Code review agent</b><span>GPT · pass, fix or block on every PR</span></div>
+      <div class="hma"><b>AI Ops agent</b><span>Drift → change request → retrain</span></div>
+    </div>
+    <div class="hmc">
+      <span class="hmk">Memory</span>
+      <div class="hmm"><i>1</i><b>Session</b><span>one module</span></div>
+      <div class="hmm"><i>2</i><b>Git</b><span>specs, plans, gates</span></div>
+      <div class="hmm"><i>3</i><b>Lakebase</b><span>agent state</span></div>
+      <div class="hmm"><i>4</i><b>Audit</b><span>events, traces</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s5" aria-label="What's reusable, what's member-risk only, and what I built" hidden>
+  <div class="eyebrow">AI-DLC on Databricks · Reuse and contribution</div>
+  <h1 class="title">What's reusable, what's member-risk only, and what I built</h1>
+  <p class="sub">The global AI-DLC package installs into any Databricks data science repo. The member-risk pack is the worked example on top of it.</p>
+  <div class="legend">
+    <span><i class="tag gl">Global</i>AI-DLC package</span>
+    <span><i class="tag mrk">Member risk</i>This model only</span>
+    <span><i class="tag lk">Locked</i>Owner approval</span>
+    <span><i class="tag me">Memory</i>Read every session</span>
+    <span><i class="sw done"></i>Done</span>
+    <span><i class="sw ip"></i>In progress</span>
+  </div>
+
+  <div class="col" style="left:40px;width:700px">
+    <div class="ph"><b>AI-ready data science repo</b></div>
+    <p class="pd">Each stage is a self-contained module. Agents read the rules and the spec before they touch code.</p>
+    <div class="tree">
+      <div class="tr"><span class="nm">member-risk-model/</span><span class="ds"></span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>AGENTS.md</span><span class="ds">Rules every agent reads first</span><span class="tg"><i class="tag gl">Global</i><i class="tag me">Memory</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>CODEOWNERS</span><span class="ds">One owner group per stage</span><span class="tg"><i class="tag lk">Locked</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>databricks.yml</span><span class="ds">Bundle: dev · test · prod</span><span class="tg"><i class="tag gl">Global</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>.specify/</span><span class="ds">Spec Kit</span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  ├─ </span>memory/constitution.md</span><span class="ds">10 rules: no leakage, no PHI</span><span class="tg"><i class="tag gl">Global</i><i class="tag me">Memory</i><i class="tag lk">Locked</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  └─ </span>templates/</span><span class="ds">Spec, plan, tasks, feature</span><span class="tg"><i class="tag gl">Global</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>skills/</span><span class="ds"></span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  ├─ </span>global/</span><span class="ds">From the AI-DLC package</span><span class="tg"><i class="tag gl">Global</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  └─ </span>member-risk/</span><span class="ds">Claims, HCC V28, CMS</span><span class="tg"><i class="tag mrk">Member risk</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>specs/NNN-change/</span><span class="ds">Spec · plan · tasks · approval</span><span class="tg"><i class="tag me">Memory</i><i class="tag lk">Locked</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>gates/</span><span class="ds">Signed gate records</span><span class="tg"><i class="tag me">Memory</i><i class="tag lk">Locked</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>common/</span><span class="ds">mrs_formulas, IO, MLflow helpers</span><span class="tg"><i class="tag mrk">Member risk</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>pipelines/pipeline.yaml</span><span class="ds">Stage order, contracts, triggers</span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>stages/</span><span class="ds">One self-contained module each</span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  ├─ </span>01_feature_creation/</span><span class="ds"><span class="st done">Done</span></span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  ├─ </span>02_feature_selection/</span><span class="ds"><span class="st ip">In progress</span></span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  ├─ </span>03_model_training/</span><span class="ds"><span class="st ip">In progress</span></span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  ├─ </span>04_model_inference/</span><span class="ds"><span class="st ip">In progress</span></span><span class="tg"></span></div>
+      <div class="tr"><span class="nm"><span class="g">│  └─ </span>05_mlops/</span><span class="ds"><span class="st ip">In progress</span></span><span class="tg"></span></div>
+      <div class="tr note"><span class="nm"><span class="g">│     </span>each stage: config/ · contract.yaml · src/ · tests/ · AGENTS.md · job.yml</span></div>
+      <div class="tr"><span class="nm"><span class="g">├─ </span>.github/workflows/</span><span class="ds">CI, AI code review, deploy</span><span class="tg"><i class="tag gl">Global</i></span></div>
+      <div class="tr"><span class="nm"><span class="g">└─ </span>tools/code_review_agent/</span><span class="ds">The aidlc_review() package</span><span class="tg"><i class="tag gl">Global</i></span></div>
+    </div>
+  </div>
+
+  <div class="col" style="left:756px;width:560px">
+    <div class="ph"><b>Skills and assets</b></div>
+    <div class="skc">
+      <div class="hdr"><b>Global · AI-DLC package</b><span>Any Databricks data science team</span></div>
+      <div class="grp"><span class="gk">Spec Kit commands · /speckit.</span><div class="ps"><span class="pl cm">specify</span><span class="pl cm">clarify</span><span class="pl cm">plan</span><span class="pl cm">tasks</span><span class="pl cm">analyze</span><span class="pl cm">implement</span></div></div>
+      <div class="grp"><span class="gk">Build skills</span><div class="ps"><span class="pl sk">@Feature-Creation</span><span class="pl sk">@Tech-Requirement</span><span class="pl sk">ds-data-profiling</span><span class="pl sk">feature-store-patterns</span><span class="pl sk">config-driven-module</span><span class="pl sk">leakage-checks</span><span class="pl sk">mlflow-tracking</span><span class="pl sk">model-evaluation</span></div></div>
+      <div class="grp"><span class="gk">Review and operate</span><div class="ps"><span class="pl sk">request-code-review</span><span class="pl sk">gate-review</span><span class="pl sk">@MLOps</span><span class="pl sk">drift-triage</span></div></div>
+      <div class="grp"><span class="gk">Sub-agents</span><div class="ps"><span class="pl ag2">spec reviewer</span><span class="pl ag2">leakage auditor</span><span class="pl ag2">data validator</span><span class="pl ag2">test writer</span></div></div>
+      <div class="grp"><span class="gk">Templates and platform tables</span><div class="ps"><span class="pl out">data spec</span><span class="pl out">feature spec</span><span class="pl out">target definition</span><span class="pl out">model card</span><span class="pl out">evaluation protocol</span><span class="pl out">monitoring plan</span><span class="pl out">change request</span><span class="pl out"><code>aidlc_gates</code></span><span class="pl out"><code>aidlc_events</code></span></div></div>
+    </div>
+    <div class="skc mrc">
+      <div class="hdr"><b>Member risk pack</b><span>This model only</span></div>
+      <div class="grp"><span class="gk">Domain skills</span><div class="ps"><span class="pl sk">claims-data-rules</span><span class="pl sk">hcc-v28-mapping</span><span class="pl sk">cms-risk-comparison</span></div><span class="t">Claims lag, reversals and member-months · V24 to V28 HCC codes · the test against CMS-HCC</span></div>
+      <div class="grp"><span class="gk">Feature rules</span><div class="ps"><span class="pl out">MMR / MOR</span><span class="pl out">SDOH</span><span class="pl out">PDFM embeddings</span><span class="pl out">Esri geospatial</span></div></div>
+      <div class="grp"><span class="gk">Spec, code and tests</span><div class="ps"><span class="pl gt">MRS-001 · 17 modules</span><span class="pl out"><code>mrs_formulas</code> F1–F8</span><span class="pl out">Golden test: 10 members</span></div></div>
+      <div class="grp"><span class="gk">Sub-agent and monitoring</span><div class="ps"><span class="pl ag2">CMS evaluator</span><span class="pl out">Predicted ÷ actual by condition group</span></div></div>
+    </div>
+  </div>
+
+  <div class="col" style="left:1332px;width:548px">
+    <div class="ph"><b>My contribution</b><span class="rt">AI architect and builder</span></div>
+    <div class="tl">
+      <div class="stp"><span class="nb">1</span><div class="bd"><div class="t1"><b>Wrote v1 by hand</b><span class="st done">Done</span></div><p>Member-risk scripts for every stage: features, training, MLflow tracking and deployment.</p></div></div>
+      <div class="stp"><span class="nb">2</span><div class="bd"><div class="t1"><b>Designed the harness</b><span class="st done">Done</span></div><p>The seven layers on Databricks, the four memory layers, and governance through code owners and tech-lead spec approval.</p></div></div>
+      <div class="stp"><span class="nb">3</span><div class="bd"><div class="t1"><b>Wrote the guides</b><span class="st done">Done</span></div><p>The constitution, the spec templates, the global skills and the member-risk skills.</p></div></div>
+      <div class="stp"><span class="nb">4</span><div class="bd"><div class="t1"><b>Rebuilt feature creation with Spec Kit</b><span class="st done">Done</span></div><p>Spec, plan, tasks and code end to end: the first stage built through the harness.</p></div></div>
+      <div class="stp ip"><span class="nb">5</span><div class="bd"><div class="t1"><b>Adding the agents</b><span class="st ip">In progress</span></div><p>The GPT code review agent and the AI Ops agent with Lakebase memory, while the other four stages move through the harness.</p></div></div>
+      <div class="stp ip"><span class="nb">6</span><div class="bd"><div class="t1"><b>Packaging and proving it</b><span class="st ip">In progress</span></div><p>The global package, the member-risk pack and a scorecard against vibe coding, ready to scale through the AIDLC champion network that has enabled 4,000+ people.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s6" aria-label="What changes when feature creation runs through AI-DLC" hidden>
+  <div class="eyebrow">AI-DLC on Databricks · Impact trial</div>
+  <h1 class="title">What changes when feature creation runs through AI-DLC</h1>
+  <p class="sub">Same brief, same data, same model, built twice. The first columns show how each approach works; the trial fills in the results.</p>
+  <div class="legend" style="grid-template-columns:repeat(2,auto)">
+    <span><i class="sw risk"></i>Without AI-DLC: the risk</span>
+    <span><i class="sw add"></i>With AI-DLC: the control</span>
+    <span><i class="sw ip"></i>Result pending the trial</span>
+    <span><i class="sw dash"></i>Control still being built</span>
+  </div>
+
+  <div class="start">
+    <div class="lbl"><small>The trial</small><b>Feature creation, built twice</b></div>
+    <span class="sc">Same brief, 1% sample and model</span>
+    <span class="sc">Sealed acceptance tests</span>
+    <span class="sc">5 planted defects</span>
+    <span class="sc">2 change requests</span>
+    <span class="sc">Scored by a third person</span>
+    <span class="sc hi">Results fill the last column</span>
+  </div>
+
+  <div class="chd dh" style="left:40px;width:250px">Dimension</div>
+  <div class="chd wo" style="left:302px;width:520px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg>Without AI-DLC <small>vibe coding</small></div>
+  <div class="chd wi" style="left:834px;width:560px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg>With AI-DLC <small>spec, skills, agents, gates</small></div>
+  <div class="chd me" style="left:1406px;width:474px"><span>Measured in the trial</span><span class="st ip">Results pending</span></div>
+
+  <!-- 1 security -->
+  <div class="dm" style="top:254px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2.5"/></svg><div><b>Security</b><span>PHI and access</span></div></div>
+  <div class="cx wo" style="top:254px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>Nothing stops PHI from reaching prompts, logs or outputs, and the agent can write anywhere the engineer can.</span></div>
+  <div class="cx wi" style="top:254px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>A <span class="ipt">hook blocks PHI</span> in logs and outputs, a <span class="ipt">guardrail agent</span> checks every PR, and agents write only to the dev catalog.</span></div>
+  <div class="ms" style="top:254px"><b>PHI exposures</b><div class="sl"><span class="v vb"><i>Vibe</i>__</span><span class="v ad"><i>AI-DLC</i>__</span></div><small>Also: blocked attempts, writes outside the dev catalog</small></div>
+
+  <!-- 2 correctness -->
+  <div class="dm" style="top:360px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.4l2.5 2.5 4.9-5.2"/></svg><div><b>Correctness</b><span>Feature quality</span></div></div>
+  <div class="cx wo" style="top:360px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>No acceptance criteria up front, so leakage, duplicate claims and mixed HCC versions can pass unnoticed.</span></div>
+  <div class="cx wi" style="top:360px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>The spec sets acceptance criteria first; the golden test, leakage tests and <span class="ipt">review agent</span> run before merge.</span></div>
+  <div class="ms" style="top:360px"><b>Planted defects caught</b><div class="sl"><span class="v vb"><i>Vibe</i>__ of 5</span><span class="v ad"><i>AI-DLC</i>__ of 5</span></div><small>Also: first-pass acceptance, golden-test match on 10 members</small></div>
+
+  <!-- 3 model impact -->
+  <div class="dm" style="top:466px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M6 16.5l4-5 3.2 3 4.8-6.5"/><path d="M15 8h3v3"/></svg><div><b>Model impact</b><span>Does it hold up</span></div></div>
+  <div class="cx wo" style="top:466px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>Leaky features inflate validation scores, then the model falls short on the unseen test year.</span></div>
+  <div class="cx wi" style="top:466px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>Leak-free features and a locked evaluation, so the score you see is the score that holds.</span></div>
+  <div class="ms" style="top:466px"><b>Test-year R², same model on each feature set</b><div class="sl"><span class="v vb"><i>Vibe</i>0.__</span><span class="v ad"><i>AI-DLC</i>0.__</span></div><small>Also: calibration by decile, gap to CMS-HCC</small></div>
+
+  <!-- 4 speed -->
+  <div class="dm" style="top:572px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12.5" r="8"/><path d="M12 8.5v4.3l2.8 1.8"/><path d="M10 2.8h4"/></svg><div><b>Speed</b><span>Time to done</span></div></div>
+  <div class="cx wo" style="top:572px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>A quick first draft, then rework: re-prompting, debugging and re-running by hand.</span></div>
+  <div class="cx wi" style="top:572px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>A slower start while the spec is written, then fewer rework rounds and faster changes.</span></div>
+  <div class="ms" style="top:572px"><b>Hours to done, including 2 changes</b><div class="sl"><span class="v vb"><i>Vibe</i>__ h</span><span class="v ad"><i>AI-DLC</i>__ h</span></div><small>Also: rework rounds, time to first passing build</small></div>
+
+  <!-- 5 cost -->
+  <div class="dm" style="top:678px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6.5" rx="7" ry="2.8"/><path d="M5 6.5v5.3c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6.5"/><path d="M5 11.8v5.4c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-5.4"/></svg><div><b>Cost</b><span>Tokens and compute</span></div></div>
+  <div class="cx wo" style="top:678px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>Context is re-explained in every prompt, and failed attempts burn tokens and cluster time.</span></div>
+  <div class="cx wi" style="top:678px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>Skills load only when needed, one module per session, and fewer failed runs.</span></div>
+  <div class="ms" style="top:678px"><b>Cost per feature</b><div class="sl"><span class="v vb"><i>Vibe</i>$__</span><span class="v ad"><i>AI-DLC</i>$__</span></div><small>Also: tokens per feature, DBUs per full-data run</small></div>
+
+  <!-- 6 audit -->
+  <div class="dm" style="top:784px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 3h6v3.2H9z"/><path d="M8.8 11.5h6.4M8.8 15h4.4"/></svg><div><b>Audit</b><span>Governance</span></div></div>
+  <div class="cx wo" style="top:784px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>Decisions live in chat history, with no named approver and no link from code back to a requirement.</span></div>
+  <div class="cx wi" style="top:784px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>The tech lead approves the spec, a code owner approves the PR, and every agent step is traced.</span></div>
+  <div class="ms" style="top:784px"><b>Actions in the audit trail</b><div class="sl"><span class="v vb"><i>Vibe</i>__%</span><span class="v ad"><i>AI-DLC</i>__%</span></div><small>Also: features traced to a spec, named approvals</small></div>
+
+  <!-- 7 change and reuse -->
+  <div class="dm" style="top:890px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="5.5" r="2"/><circle cx="7" cy="18.5" r="2"/><circle cx="17" cy="8" r="2"/><path d="M7 7.5v9M17 10c0 4.2-10 2.3-10 6.5"/></svg><div><b>Change and reuse</b><span>Scale</span></div></div>
+  <div class="cx wo" style="top:890px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.2 16H2.8z"/><path d="M12 10v4.2M12 17v.4"/></svg><span>Every change starts from a fresh prompt; the blast radius is unknown and the knowledge stays with one person.</span></div>
+  <div class="cx wi" style="top:890px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.2c0 4.5-3.1 8.3-7.5 9.8-4.4-1.5-7.5-5.3-7.5-9.8V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.6"/></svg><span>A change is a spec update that reruns from the earliest stage, and the package works for any team.</span></div>
+  <div class="ms" style="top:890px"><b>Hours per change request</b><div class="sl"><span class="v vb"><i>Vibe</i>__ h</span><span class="v ad"><i>AI-DLC</i>__ h</span></div><small>Also: files touched, regressions, hand-off time</small></div>
+
+  <p class="cap" style="left:40px;top:1004px;width:1840px">A first draft is often quicker without AI-DLC. <b>The trial scores the whole cycle, including two change requests, because that is where rework, leakage and audit gaps cost the most.</b></p>
+</section>
+
+</div></div></div>
+
+<nav class="deckbar" aria-label="Slides">
+  <button type="button" class="nav" id="prev" aria-label="Previous slide">←</button>
+<button type="button" class="tab">1 · Objective and impact</button>
+  <button type="button" class="tab">2 · Pipeline build</button>
+  <button type="button" class="tab">3 · Delivery loop</button>
+  <button type="button" class="tab">4 · Reuse and contribution</button>
+  <button type="button" class="tab">5 · Impact trial</button>
+  <button type="button" class="nav" id="next" aria-label="Next slide">→</button>
+  <span class="count" id="count">1 / 5</span>
+  <button type="button" id="fs">Full screen</button>
+</nav>
+
+<script>
+(function(){
+  var stage=document.getElementById('stage'), canvas=document.getElementById('canvas');
+  var slides=[].slice.call(canvas.querySelectorAll('.slide'));
+  var tabs=[].slice.call(document.querySelectorAll('.deckbar .tab'));
+  var prev=document.getElementById('prev'), next=document.getElementById('next');
+  var count=document.getElementById('count'), fs=document.getElementById('fs');
+  var cur=0;
+
+  function fit(){
+    var w=stage.clientWidth, h=stage.clientHeight;
+    if(!w||!h) return;
+    var s=Math.min(w/1920,h/1080), x=(w-1920*s)/2, y=(h-1080*s)/2;
+    canvas.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';
+  }
+  function show(i){
+    i=Math.max(0,Math.min(slides.length-1,i|0)); cur=i;
+    for(var k=0;k<slides.length;k++){ slides[k].hidden=(k!==i); }
+    for(var t=0;t<tabs.length;t++){ tabs[t].setAttribute('aria-current', t===i?'true':'false'); }
+    count.textContent=(i+1)+' / '+slides.length;
+    prev.disabled=(i===0); next.disabled=(i===slides.length-1);
+    try{ history.replaceState(null,'','#'+slides[i].id); }catch(e){}
+  }
+  function fromHash(){
+    var h=(location.hash||'').slice(1);
+    for(var k=0;k<slides.length;k++){ if(slides[k].id===h) return k; }
+    return -1;
+  }
+
+  prev.addEventListener('click',function(){ show(cur-1); });
+  next.addEventListener('click',function(){ show(cur+1); });
+  tabs.forEach(function(b,k){ b.addEventListener('click',function(){ show(k); }); });
+  document.addEventListener('keydown',function(e){
+    if(e.altKey||e.ctrlKey||e.metaKey) return;
+    var k=e.key, onBtn=e.target&&e.target.closest&&e.target.closest('button');
+    if((k===' '||k==='Enter')&&onBtn) return;
+    if(k==='ArrowRight'||k==='PageDown'||k===' '){ e.preventDefault(); show(cur+1); }
+    else if(k==='ArrowLeft'||k==='PageUp'){ e.preventDefault(); show(cur-1); }
+    else if(k==='Home'){ e.preventDefault(); show(0); }
+    else if(k==='End'){ e.preventDefault(); show(slides.length-1); }
+    else if(/^[1-9]$/.test(k)&&+k<=slides.length){ show(+k-1); }
+  });
+  window.addEventListener('hashchange',function(){ var i=fromHash(); if(i>=0&&i!==cur) show(i); });
+
+  if(!stage.requestFullscreen){ fs.hidden=true; }
+  fs.addEventListener('click',function(){
+    try{
+      if(document.fullscreenElement){ var p=document.exitFullscreen(); if(p&&p.catch) p.catch(function(){}); }
+      else { var q=stage.requestFullscreen(); if(q&&q.catch) q.catch(function(){}); }
+    }catch(e){}
+  });
+  document.addEventListener('fullscreenchange',function(){
+    fs.textContent=document.fullscreenElement?'Exit full screen':'Full screen';
+    fit();
+  });
+
+  var start=fromHash();
+  show(start<0?0:start);
+  fit();
+  if('ResizeObserver' in window){ new ResizeObserver(fit).observe(stage); }
+  else { window.addEventListener('resize',fit); }
+})();
+</script>
+</body>
+</html>
