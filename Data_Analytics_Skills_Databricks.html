@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Analytics Skills · Databricks</title>
+<style>
+  :root {
+    --orange: #FF612B;
+    --orange-ink: #C2410C;
+    --orange-tint: #FFF1EB;
+    --navy: #002677;
+    --navy-soft: #E8EDF7;
+    --ink: #1F2328;
+    --body: #4B4D4F;
+    --muted: #6B6E72;
+    --rule: #E3E1DC;
+    --warm: #FAF8F2;
+    --white: #FFFFFF;
+    --radius: 10px;
+    --mono: "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--white); color: var(--body); font: 16px/1.55 var(--sans); }
+  a { color: var(--navy); }
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--warm); border: 1px solid var(--rule); border-radius: 4px; padding: 0 4px; color: var(--ink); }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+  /* top bar */
+  .topbar { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,0.96); border-bottom: 1px solid var(--rule); backdrop-filter: blur(6px); }
+  .topbar::before { content: ""; display: block; height: 4px; background: linear-gradient(90deg, var(--orange) 0 70%, var(--navy) 70% 100%); }
+  .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+  .brand b { color: var(--navy); font-size: 18px; letter-spacing: -0.01em; }
+  .brand span { color: var(--orange-ink); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+  nav a { color: var(--body); text-decoration: none; font-size: 14px; margin-left: 20px; }
+  nav a:hover { color: var(--orange-ink); }
+
+  /* hero */
+  .hero { padding-top: 64px; padding-bottom: 40px; }
+  .eyebrow { color: var(--orange-ink); font-weight: 700; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 12px; }
+  h1 { color: var(--navy); font-size: clamp(32px, 5vw, 52px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 18px; max-width: 820px; }
+  h1 em { font-style: normal; color: var(--orange); }
+  .lead { font-size: 19px; max-width: 760px; margin: 0 0 32px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 900px; }
+  .stat { border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px 18px; background: var(--white); }
+  .stat b { display: block; color: var(--orange-ink); font-size: 30px; line-height: 1.1; }
+  .stat span { font-size: 14px; color: var(--muted); }
+
+  section { padding: 56px 0; border-top: 1px solid var(--rule); }
+  h2 { color: var(--navy); font-size: 30px; letter-spacing: -0.01em; margin: 0 0 8px; }
+  .sub { margin: 0 0 28px; max-width: 760px; }
+
+  /* how it works */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: s; }
+  .step { position: relative; border: 1px solid var(--rule); border-radius: var(--radius); padding: 22px 20px 20px; background: var(--white); }
+  .step::before { counter-increment: s; content: counter(s); position: absolute; top: -14px; left: 18px; width: 28px; height: 28px; border-radius: 50%; background: var(--orange); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+  .step h3 { color: var(--ink); margin: 6px 0 6px; font-size: 18px; }
+  .step p { margin: 0; font-size: 15px; }
+  .invoke { margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .invoke div { background: var(--warm); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .invoke b { display: block; color: var(--ink); font-size: 13px; }
+
+  /* spotlight */
+  .spot { border: 1px solid var(--rule); border-left: 6px solid var(--orange); border-radius: var(--radius); padding: 28px; background: var(--white); }
+  .spot .tag { display: inline-block; background: var(--orange-tint); color: var(--orange-ink); font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+  .spot h3 { color: var(--navy); font-size: 26px; margin: 12px 0 6px; }
+  .spot .name { font-family: var(--mono); color: var(--orange-ink); font-size: 15px; }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 14px; align-items: stretch; margin: 24px 0 18px; }
+  .phase { border: 1px solid var(--rule); border-radius: 8px; padding: 14px; position: relative; background: var(--white); }
+  .phase b { display: block; color: var(--navy); font-size: 13px; letter-spacing: 0.08em; }
+  .phase p { margin: 4px 0 0; font-size: 14px; }
+  .phase:not(:nth-child(4))::after { content: "→"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); color: var(--orange); font-weight: 700; }
+  .phase.red b::after { content: " · tests fail first"; color: #B42318; font-weight: 600; letter-spacing: 0; }
+  .phase.green b::after { content: " · all green"; color: #157347; font-weight: 600; letter-spacing: 0; }
+  .guard { border: 2px dashed var(--orange); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: center; max-width: 170px; }
+  .guard b { color: var(--orange-ink); font-size: 13px; }
+  .guard p { margin: 4px 0 0; font-size: 14px; }
+  .spot .why { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+  .spot ul { margin: 0; padding-left: 18px; }
+  .spot li { margin-bottom: 6px; }
+  .quote { font-size: 18px; color: var(--ink); border-top: 1px solid var(--rule); margin-top: 22px; padding-top: 16px; }
+
+  /* catalog */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 22px; }
+  .chip { border: 1px solid var(--rule); background: var(--white); color: var(--body); border-radius: 999px; padding: 7px 14px; font: 600 14px var(--sans); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .chip:focus-visible, .search:focus-visible, .copy:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+  .search { margin-left: auto; min-width: 260px; border: 1px solid var(--rule); border-radius: 999px; padding: 8px 16px; font: 15px var(--sans); color: var(--ink); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
+  .card { border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; background: var(--white); display: flex; flex-direction: column; }
+  .card .area { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange-ink); }
+  .card h3 { font-family: var(--mono); color: var(--navy); font-size: 16px; margin: 6px 0 4px; word-break: break-word; }
+  .card .about { color: var(--ink); font-weight: 600; margin: 0 0 12px; }
+  .card h4 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 6px; }
+  .card ul.can { margin: 0; padding-left: 18px; font-size: 14.5px; }
+  .card ul.can li { margin-bottom: 4px; }
+  .qs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .qs li { display: flex; gap: 8px; align-items: flex-start; background: var(--warm); border-radius: 8px; padding: 9px 10px; font-size: 14.5px; color: var(--ink); }
+  .qs li span { flex: 1; }
+  .copy { border: 1px solid var(--rule); background: var(--white); border-radius: 6px; font: 600 12px var(--sans); color: var(--navy); padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+  .copy.done { color: #157347; border-color: #157347; }
+  .empty { display: none; padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--rule); border-radius: var(--radius); }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--rule); }
+  th { color: var(--navy); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 2px solid var(--navy); }
+  td:first-child { color: var(--ink); }
+  .ask { font-style: italic; }
+  .twocol { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; align-items: start; }
+  .box { border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; }
+  .box h3 { margin: 0 0 10px; color: var(--ink); font-size: 18px; }
+  .box ul { margin: 0; padding-left: 18px; }
+  .box li { margin-bottom: 8px; }
+
+  footer { border-top: 1px solid var(--rule); padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 900px) {
+    .stats, .invoke { grid-template-columns: repeat(2, 1fr); }
+    .steps, .spot .why, .twocol { grid-template-columns: 1fr; }
+    .flow { grid-template-columns: 1fr 1fr; }
+    .phase::after { display: none; }
+    .guard { max-width: none; grid-column: 1 / -1; }
+    nav { display: none; }
+    .search { margin-left: 0; width: 100%; min-width: 0; }
+    .table-scroll { overflow-x: auto; }
+  }
+  @media print {
+    .topbar { position: static; }
+    .controls, .copy { display: none; }
+    section { break-inside: avoid-page; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top"><b>Data Analytics Skills</b><span>Databricks</span></a>
+    <nav aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#catalog">Skill catalog</a>
+      <a href="#spotlight">Spotlight</a>
+      <a href="#guardrails">Guardrails</a>
+      <a href="#start">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <h1>Your AI coding assistant, <em>fluent in Databricks</em>, from SQL to production agents.</h1>
+    <p class="lead">Data Analytics Skills are playbooks your coding assistant loads on demand. Ask in plain English, and the assistant uses current Databricks APIs, follows production-grade practices, and checks its own work, across analytics, data engineering, data science and agent quality.</p>
+    <div class="stats">
+      <div class="stat"><b>17</b><span>skills in one pack</span></div>
+      <div class="stat"><b>5</b><span>areas: analytics to agent quality</span></div>
+      <div class="stat"><b>4</b><span>assistants: Codex, Claude Code, GitHub Copilot, Genie Code</span></div>
+      <div class="stat"><b>~0</b><span>context cost until a skill is needed</span></div>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="sub">Each skill is a folder of instructions. Your assistant sees only a one-line description of each skill until a task matches it, so installing all 17 costs almost nothing.</p>
+      <div class="steps">
+        <div class="step"><h3>You ask in plain English</h3><p>"Build a pipeline that ingests claims JSON and keeps member history." No special syntax needed.</p></div>
+        <div class="step"><h3>The matching skill loads</h3><p>The assistant matches your request to a skill's description and reads its playbook, plus any reference files the task needs.</p></div>
+        <div class="step"><h3>It follows the playbook</h3><p>Current APIs, safe defaults, guardrails against common mistakes, and verification steps before it reports back.</p></div>
+      </div>
+      <div class="invoke" aria-label="Call a skill directly">
+        <div><b>Codex</b><code>$skill-name</code> or <code>/skills</code></div>
+        <div><b>Claude Code</b><code>/skill-name</code></div>
+        <div><b>GitHub Copilot</b><code>/skill-name</code></div>
+        <div><b>Genie Code</b>type <code>@</code> and choose the skill</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="catalog">
+    <div class="wrap">
+      <h2>Skill catalog</h2>
+      <p class="sub">What each skill is about, what it can do, and questions you can ask today. Filter by area or search for a task.</p>
+      <div class="controls" role="toolbar" aria-label="Filter skills">
+        <button class="chip" type="button" data-area="all" aria-pressed="true">All 17</button>
+        <button class="chip" type="button" data-area="Foundation and analytics" aria-pressed="false">Foundation and analytics</button>
+        <button class="chip" type="button" data-area="Data engineering" aria-pressed="false">Data engineering</button>
+        <button class="chip" type="button" data-area="Data science" aria-pressed="false">Data science</button>
+        <button class="chip" type="button" data-area="GenAI" aria-pressed="false">GenAI</button>
+        <button class="chip" type="button" data-area="Agent quality" aria-pressed="false">Agent quality</button>
+        <input class="search" type="search" placeholder="Search, e.g. streaming, SCD, traces" aria-label="Search skills">
+      </div>
+      <div class="grid" id="grid"></div>
+      <p class="empty" id="empty">No skill matches that search. Try a broader word.</p>
+    </div>
+  </section>
+
+  <section id="spotlight">
+    <div class="wrap">
+      <h2>Spotlight: the skill that sets this pack apart</h2>
+      <p class="sub">Most tools stop at telling you what went wrong in an agent. This one fixes it in your code, proves the fix, and keeps it fixed.</p>
+      <div class="spot">
+        <span class="tag">Biggest selling point</span>
+        <h3>Fix agents test-first, and keep them fixed</h3>
+        <div class="name">fix-agent-issue</div>
+        <div class="flow" role="list" aria-label="The fix loop">
+          <div class="phase" role="listitem"><b>EXPLORE</b><p>Reads the bad trace, logs the complaint on it, writes a diagnosis. No code edits yet.</p></div>
+          <div class="phase red" role="listitem"><b>PLAN</b><p>Turns the complaint into regression tests and proves they fail on today's agent.</p></div>
+          <div class="phase" role="listitem"><b>IMPLEMENT</b><p>Smallest change at the layer that's actually wrong: tool, retrieval, routing or prompt.</p></div>
+          <div class="phase green" role="listitem"><b>VERIFY</b><p>Runs the full suite so nothing else breaks, then asks you to review one new trace.</p></div>
+          <div class="guard" role="listitem"><b>Guarded in CI</b><p>The tests are plain pytest. They run on every pull request, so the failure can't quietly return.</p></div>
+        </div>
+        <div class="why">
+          <div>
+            <h4 style="margin:0 0 8px;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase">Why it matters</h4>
+            <ul>
+              <li>Works in your repo, from the trace to the exact line of code.</li>
+              <li>Handles new business rules too, and asks whether a rule applies everywhere or only in some cases before writing tests.</li>
+              <li>Refuses quick prompt patches for problems that are really a missing tool or missing data.</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase">Try asking</h4>
+            <ul class="qs">
+              <li><span>This answer is wrong. Fix it. Trace tr-1234.</span><button class="copy" type="button">Copy</button></li>
+              <li><span>New business rule: when the agent discusses a member's costs, it must state the member ID it looked up.</span><button class="copy" type="button">Copy</button></li>
+            </ul>
+          </div>
+        </div>
+        <p class="quote">Spec-driven, test-first, verified: the same AI-DLC discipline, applied to agents.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="guardrails">
+    <div class="wrap">
+      <h2>Guardrails built in</h2>
+      <p class="sub">Every skill carries rules that steer the assistant away from common, costly mistakes. These are good prompts to try in a demo.</p>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th style="width:38%">If someone asks…</th><th>The skill makes the assistant…</th></tr></thead>
+        <tbody>
+          <tr><td class="ask">"Just use whichever profile comes first."</td><td>List every workspace profile and wait for you to choose. It never guesses a workspace.</td></tr>
+          <tr><td class="ask">"Run <code>databricks sql execute</code>."</td><td>Explain that the command doesn't exist, and use the CLI's real query tool.</td></tr>
+          <tr><td class="ask">"Partition the table and ZORDER it."</td><td>Recommend Liquid Clustering, the better default for new tables.</td></tr>
+          <tr><td class="ask">"Extend this old <code>import dlt</code> pipeline code."</td><td>Migrate it to the current pipelines API first, instead of building on legacy code.</td></tr>
+          <tr><td class="ask">"It failed once, just do a full refresh."</td><td>Warn that a full refresh can lose streaming state, suggest a selective refresh, and ask first.</td></tr>
+          <tr><td class="ask">"Train it on my laptop and move it to Production."</td><td>Train on the platform as a job, and use the <code>@prod</code> alias because stages are deprecated.</td></tr>
+          <tr><td class="ask">"Hard-code this model name for my agent."</td><td>List the model endpoints actually available in your workspace first.</td></tr>
+          <tr><td class="ask">"It says READY, query the endpoint now."</td><td>Check that the version swap has also finished, so you're not testing the old model.</td></tr>
+          <tr><td class="ask">"Skip MLflow, just write a quick evaluation loop."</td><td>Use MLflow's evaluation APIs, so every result stays tracked and comparable.</td></tr>
+          <tr><td class="ask">"Skip the tests and patch the prompt."</td><td>Push back once, write a failing test first, and fix the layer that's actually wrong.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <h2>Get started</h2>
+      <p class="sub">Copy the skill folders into one location for your assistant. Use the repository location to share them with your team.</p>
+      <div class="twocol">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Assistant</th><th>Shared with the team (repo)</th><th>Just for you</th></tr></thead>
+            <tbody>
+              <tr><td>Codex</td><td><code>.agents/skills/</code></td><td><code>~/.agents/skills/</code></td></tr>
+              <tr><td>Claude Code</td><td><code>.claude/skills/</code></td><td><code>~/.claude/skills/</code></td></tr>
+              <tr><td>GitHub Copilot</td><td><code>.github/skills/</code></td><td><code>~/.copilot/skills/</code></td></tr>
+              <tr><td>Genie Code</td><td><code>/Workspace/.assistant/skills/</code> (workspace admin)</td><td><code>/Users/&lt;you&gt;/.assistant/skills/</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="box">
+          <h3>Before you start</h3>
+          <ul>
+            <li>Databricks CLI v1.0.0 or later, and a logged-in profile.</li>
+            <li>MLflow 3.14.0 or later for the agent-quality skills.</li>
+            <li><code>jq</code> and a bash shell for trace and session analysis. On Windows, use WSL2 or Git Bash.</li>
+            <li><code>uv</code> for agent-evaluation, and <code>pytest</code> for fix-agent-issue.</li>
+            <li>Genie Code runs in notebooks. Where a skill shows shell commands, ask it to use the Python APIs instead.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Data Analytics Skills · Databricks · skill snapshot October 2026</div>
+</footer>
+
+<script>
+const SKILLS = [
+  { area: "Foundation and analytics", name: "databricks-core",
+    about: "The starting point for every Databricks task: login, profiles, the CLI and quick data exploration.",
+    can: ["Checks your CLI and login, then asks you to choose a workspace profile. It never guesses.",
+          "Uses the CLI's real commands and syntax, and avoids flags that don't exist.",
+          "Explores tables with built-in data tools: structure, sample rows and ad-hoc SQL."],
+    qs: ["Which Databricks profiles do I have, and which SQL warehouse is the default?",
+         "Show me the structure of catalog.schema.claims and 5 sample rows.",
+         "List all the tables in our analytics schema."] },
+  { area: "Foundation and analytics", name: "databricks-dbsql",
+    about: "Modern Databricks SQL: the features generic SQL doesn't have.",
+    can: ["Writes SQL scripts, stored procedures, recursive CTEs and readable pipe-syntax queries.",
+          "Uses AI functions such as ai_classify and ai_query, with row limits to control cost.",
+          "Applies modeling defaults: Liquid Clustering, a star schema in gold, declared keys, case-insensitive search."],
+    qs: ["Write a pipe-syntax query of total allowed amount by region and diagnosis group for 2026.",
+         "Classify claim notes as routine, urgent or unclear with ai_classify, on 20 rows.",
+         "Create a materialized view of monthly cost per member that refreshes daily.",
+         "Should I partition this table or use clustering?"] },
+  { area: "Data engineering", name: "databricks-pipelines",
+    about: "Declarative pipelines from raw files to gold tables, with current APIs.",
+    can: ["Builds bronze, silver and gold layers with Auto Loader ingestion.",
+          "Handles change data as SCD Type 1 or 2, and adds data-quality rules.",
+          "Migrates legacy pipeline code instead of extending it, and asks before a full refresh."],
+    qs: ["Build a bronze–silver–gold pipeline that ingests claims JSON from a volume.",
+         "Keep member history as SCD Type 2 from a CDC feed.",
+         "Migrate this old pipeline code to the current API.",
+         "Drop rows with no member ID and warn on negative amounts."] },
+  { area: "Data engineering", name: "databricks-spark-structured-streaming",
+    about: "Production-grade Spark Structured Streaming.",
+    can: ["Designs windows, watermarks and stateful logic for late-arriving data.",
+          "Chooses the right stream joins and writes idempotent MERGE upserts.",
+          "Checks the job against a production checklist: checkpoints, triggers, cluster sizing and monitoring."],
+    qs: ["Write a streaming job with 15-minute cost totals per region and a watermark for late data.",
+         "How should I enrich a stream with a member lookup table?",
+         "What changes if fraud alerts need sub-second latency from Kafka?"] },
+  { area: "Data engineering", name: "databricks-jobs",
+    about: "Orchestration: multi-task jobs as deployable bundles.",
+    can: ["Scaffolds, validates, deploys and runs jobs as bundles.",
+          "Links tasks with dependencies, parameters, retries and notifications.",
+          "Sets schedules and triggers, including file arrival and table updates."],
+    qs: ["Create a nightly job that refreshes the pipeline, then runs a quality-check notebook.",
+         "Add 2 retries and an email on failure.",
+         "Run the job when new files land in the raw volume."] },
+  { area: "Data engineering", name: "databricks-lakebase",
+    about: "Serverless Postgres for apps, fed from your lakehouse.",
+    can: ["Creates autoscaling Postgres projects with scale-to-zero and branches.",
+          "Syncs gold tables into Postgres for fast application reads.",
+          "Connects securely, and explains token refresh, idle timeouts and retries."],
+    qs: ["Create a Postgres database for a care-management app and sync our gold cost table into it.",
+         "How should my app handle token expiry and idle connections?",
+         "Create a branch to test a schema change, then reset it."] },
+  { area: "Data science", name: "databricks-ml-training",
+    about: "Train, register and score models the platform way.",
+    can: ["Trains on the platform as a job, with MLflow tracking and Optuna tuning.",
+          "Registers to Unity Catalog and promotes with @prod and @challenger aliases.",
+          "Batch-scores into gold tables, and adds Feature Store only when it's justified."],
+    qs: ["Train an XGBoost model with Optuna to predict high-cost members next quarter.",
+         "Register the best model, point @prod at it and score all members into a gold table.",
+         "Do I need Feature Store for this? If so, use point-in-time joins."] },
+  { area: "Data science", name: "databricks-model-serving",
+    about: "Real-time model endpoints, run safely.",
+    can: ["Deploys models to endpoints with scale-to-zero, and waits for real readiness.",
+          "Splits traffic for A/B and canary releases, and swaps versions without downtime.",
+          "Finds available foundation model endpoints at runtime instead of hard-coding names."],
+    qs: ["Deploy the @prod version of high_cost_risk to a real-time endpoint with scale-to-zero.",
+         "Route 90% of traffic to the champion and 10% to the challenger.",
+         "Which foundation model endpoints can my agent use?"] },
+  { area: "GenAI", name: "databricks-agent-bricks",
+    about: "No-code GenAI agents: document Q&A and supervisors.",
+    can: ["Creates Knowledge Assistants over documents stored in a volume.",
+          "Builds Supervisor Agents that route between assistants, Genie spaces and functions.",
+          "Adds training examples, and checks endpoints are ready before anyone queries them."],
+    qs: ["Create a Knowledge Assistant over the benefit policy documents in this volume.",
+         "Build a supervisor that routes policy questions to that assistant and cost questions to a Genie space."] },
+  { area: "Agent quality", name: "instrumenting-with-mlflow-tracing",
+    about: "See inside your agent with tracing that actually reaches the platform.",
+    can: ["Adds MLflow tracing to Python and TypeScript agents: LangGraph, LangChain, OpenAI, DSPy, CrewAI and more.",
+          "Stores traces in Unity Catalog rather than legacy storage.",
+          "Verifies one trace end to end and gives you a link to it."],
+    qs: ["Add MLflow tracing to my LangGraph agent and store the traces in Unity Catalog.",
+         "Confirm tracing works and give me a link to the trace."] },
+  { area: "Agent quality", name: "retrieving-mlflow-traces",
+    about: "Find the traces that matter, fast.",
+    can: ["Searches by status, speed, session, user, tags and time.",
+          "Keeps every search time-bounded, so it stays fast on large histories.",
+          "Fetches a single trace by ID for deeper analysis."],
+    qs: ["Find all failed traces from the last 2 hours.",
+         "Show me the 3 slowest traces today.",
+         "List every trace in session demo-session-1, in order."] },
+  { area: "Agent quality", name: "analyzing-mlflow-trace",
+    about: "Root-cause a single wrong answer.",
+    can: ["Runs a quick health check: state, errors, span count and assessments.",
+          "Walks the spans to find exactly where the answer went wrong.",
+          "Maps the failing step to the function in your code."],
+    qs: ["Why did trace tr-1234 answer a pharmacy question with outpatient rules? Point me to the code.",
+         "Is this the LLM hallucinating, or did it get the wrong context?"] },
+  { area: "Agent quality", name: "analyzing-mlflow-session",
+    about: "Debug multi-turn conversations.",
+    can: ["Rebuilds the conversation turn by turn.",
+          "Finds the turn where the error actually started, not just where it showed up.",
+          "Checks how your code passes chat history between turns."],
+    qs: ["This chat went wrong at turn 5. Where did the error actually start?",
+         "What should we monitor so errors are caught in the turn where they happen?"] },
+  { area: "Agent quality", name: "debug-agent",
+    about: "A diagnosis with evidence, and no code changes.",
+    can: ["Uses existing traces instead of rerunning the agent.",
+          "Reports observed versus expected behavior, evidence, root cause and confidence.",
+          "Suggests the smallest likely fix, and hands off when you want it fixed."],
+    qs: ["Users say the agent gets pharmacy questions wrong. Find out why, and don't change any code."] },
+  { area: "Agent quality", name: "build-a-scorer",
+    about: "Design quality checks that are cheap and trustworthy.",
+    can: ["Turns your idea of right and wrong into 3 to 5 focused checks.",
+          "Picks the cheapest reliable method for each: a code check, a built-in scorer or an LLM judge.",
+          "Plans how to validate judges against real labels."],
+    qs: ["Help me design quality checks for our benefits agent before rollout.",
+         "Which of these checks really needs an LLM judge?"] },
+  { area: "Agent quality", name: "agent-evaluation",
+    about: "Run evaluations end to end, and explain the results.",
+    can: ["Finds an existing evaluation dataset, or builds one.",
+          "Registers the scorers, does a dry run, then runs the full evaluation.",
+          "Reports pass rates, failure patterns and recommendations."],
+    qs: ["Evaluate our agent on 20 questions and give me a report with failure patterns.",
+         "Compare this run with last week's baseline."] },
+  { area: "Agent quality", name: "fix-agent-issue",
+    about: "Fix agents test-first, and keep them fixed.",
+    can: ["Turns a complaint or a new business rule into failing regression tests.",
+          "Makes the smallest fix at the right layer, not a prompt patch.",
+          "Runs the full suite so nothing else breaks; the tests then guard every pull request."],
+    qs: ["This answer is wrong. Fix it. Trace tr-1234.",
+         "New business rule: always state the member ID when discussing costs.",
+         "The agent must never reveal internal documents."] },
+];
+
+const grid = document.getElementById("grid");
+const empty = document.getElementById("empty");
+const search = document.querySelector(".search");
+const chips = [...document.querySelectorAll(".chip")];
+let activeArea = "all";
+
+function el(tag, attrs = {}, text) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+function render() {
+  const q = search.value.trim().toLowerCase();
+  grid.textContent = "";
+  let shown = 0;
+  for (const s of SKILLS) {
+    if (activeArea !== "all" && s.area !== activeArea) continue;
+    const hay = [s.name, s.area, s.about, ...s.can, ...s.qs].join(" ").toLowerCase();
+    if (q && !hay.includes(q)) continue;
+    shown++;
+    const card = el("article", { class: "card" });
+    card.append(el("div", { class: "area" }, s.area), el("h3", {}, s.name), el("p", { class: "about" }, s.about));
+    card.append(el("h4", {}, "What it can do"));
+    const ul = el("ul", { class: "can" });
+    s.can.forEach((c) => ul.append(el("li", {}, c)));
+    card.append(ul, el("h4", {}, "Try asking"));
+    const qs = el("ul", { class: "qs" });
+    s.qs.forEach((t) => {
+      const li = el("li");
+      li.append(el("span", {}, t), el("button", { class: "copy", type: "button" }, "Copy"));
+      qs.append(li);
+    });
+    card.append(qs);
+    grid.append(card);
+  }
+  empty.style.display = shown ? "none" : "block";
+}
+
+chips.forEach((c) => c.addEventListener("click", () => {
+  activeArea = c.dataset.area;
+  chips.forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
+  render();
+}));
+search.addEventListener("input", render);
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const t = document.createElement("textarea");
+    t.value = text; document.body.append(t); t.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (_) {}
+    t.remove(); return ok;
+  }
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest(".copy");
+  if (!b) return;
+  const text = b.previousElementSibling.textContent;
+  const ok = await copyText(text);
+  b.textContent = ok ? "Copied" : "Select text";
+  b.classList.toggle("done", ok);
+  setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1500);
+});
+
+render();
+</script>
+</body>
+</html>
